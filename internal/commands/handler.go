@@ -1,63 +1,53 @@
 package commands
 
 import (
-	"strings"
+	"log"
 
 	"github.com/bwmarrin/discordgo"
 )
 
 type CommandHandler struct {
-	Prefix           string
-	CommandInstances []Command
-	CommandMap       map[string]Command
-
-	OnError func(err error, ctx *Context)
+	CommandInstances    []Command
+	CommandMap          map[string]Command
+	ApplicationCommands []*discordgo.ApplicationCommand
+	CommandFunctions    map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate)
+	OnError             func(err error, ctx *Context)
 }
 
 func NewCommandHandler(prefix string) *CommandHandler {
 	return &CommandHandler{
-		Prefix:           prefix,
-		CommandInstances: make([]Command, 0),
-		CommandMap:       make(map[string]Command),
-		OnError:          func(error, *Context) {},
+		CommandInstances:    make([]Command, 0),
+		CommandMap:          make(map[string]Command),
+		ApplicationCommands: make([]*discordgo.ApplicationCommand, 0),
+		CommandFunctions:    make(map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate)),
+		OnError:             func(error, *Context) {},
 	}
 }
 
 func (c *CommandHandler) RegisterCommand(cmd Command) {
 	c.CommandInstances = append(c.CommandInstances, cmd)
-	for _, invoke := range cmd.Invokes() {
-		c.CommandMap[invoke] = cmd
+	c.CommandMap[cmd.Name()] = cmd
+	c.CommandFunctions[cmd.Name()] = cmd.Exec
+	appCommand := discordgo.ApplicationCommand{
+		Name:        cmd.Name(),
+		Description: cmd.Description(),
+		Options:     cmd.Options(),
+	}
+
+	c.ApplicationCommands = append(c.ApplicationCommands, &appCommand)
+}
+
+func (c *CommandHandler) Handler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	if h, ok := c.CommandFunctions[i.Data.Name]; ok {
+		h(s, i)
 	}
 }
 
-func (c *CommandHandler) HandleMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if m.Author.Bot || s.State.User.ID == m.Author.ID || !strings.HasPrefix(m.Content, c.Prefix) {
-		return
-	}
-
-	split := strings.Split(m.Content[len(c.Prefix):], " ")
-	if len(split) < 1 {
-		return
-	}
-
-	// This represents the "command," or the arg just after the prefix. i.e.: !kick -> [kick]
-	invoke := split[0]
-	// Everything after the first arg.
-	args := split[1:]
-
-	cmd, ok := c.CommandMap[invoke]
-	if !ok || cmd == nil {
-		return
-	}
-
-	ctx := &Context{
-		Session: s,
-		Args:    args,
-		Handler: c,
-		Message: m.Message,
-	}
-
-	if err := cmd.Exec(ctx); err != nil {
-		c.OnError(err, ctx)
+func (c *CommandHandler) CreateCommands(s *discordgo.Session, guildId string) {
+	for _, v := range c.ApplicationCommands {
+		_, err := s.ApplicationCommandCreate(s.State.User.ID, guildId, v)
+		if err != nil {
+			log.Panicf("Cannot create '%v' command: %v", v.Name, err)
+		}
 	}
 }

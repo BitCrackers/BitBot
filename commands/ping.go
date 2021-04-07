@@ -1,11 +1,11 @@
 package commands
 
-import "github.com/BitCrackers/BitBot/internal/commands"
+import "github.com/bwmarrin/discordgo"
 
 type CommandPing struct{}
 
-func (c *CommandPing) Invokes() []string {
-	return []string{"ping"}
+func (c *CommandPing) Name() string {
+	return "ping"
 }
 
 func (c *CommandPing) Description() string {
@@ -16,10 +16,15 @@ func (c *CommandPing) AdminRequired() bool {
 	return false
 }
 
-func (c *CommandPing) Exec(ctx *commands.Context) error {
-	_, err := ctx.Session.ChannelMessageSend(ctx.Message.ChannelID, "Pong!")
-	if err != nil {
-		return err
-	}
-	return nil
+func (c *CommandPing) Options() []*discordgo.ApplicationCommandOption {
+	return make([]*discordgo.ApplicationCommandOption, 0)
+}
+
+func (c *CommandPing) Exec(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionApplicationCommandResponseData{
+			Content: "Pong",
+		},
+	})
 }
