@@ -9,7 +9,7 @@ import (
 	"github.com/BitCrackers/BitBot/commands"
 	"github.com/BitCrackers/BitBot/events"
 
-	internalCommands "github.com/BitCrackers/BitBot/internal/commands"
+	internalCommands "github.com/BitCrackers/BitBot/internal/router"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -59,7 +59,7 @@ func setupBot(token string, guildId string) {
 	// Create a Discord session.
 	bot, err := discordgo.New("Bot " + token)
 
-	cmdHandler := internalCommands.NewCommandHandler("!")
+	cmdHandler := internalCommands.NewCommandHandler()
 
 	if err != nil {
 		fmt.Println("> ", err)
@@ -71,9 +71,10 @@ func setupBot(token string, guildId string) {
 	// Set up command handler.
 	bot.AddHandler(cmdHandler.Handler) // Add commands here.
 
-	cmdHandler.RegisterCommand(&commands.CommandPing{})
-	cmdHandler.RegisterCommand(&commands.CommandParse{})
-	cmdHandler.RegisterCommand(&commands.CommandKick{})
+	cmdHandler.RegisterCommand(commands.CommandPing)
+	cmdHandler.RegisterCommand(commands.CommandParse)
+	cmdHandler.RegisterCommand(commands.CommandKick)
+	cmdHandler.RegisterCommand(commands.CommandBan)
 
 	// Setup bot intents here. GuildMembers is needed for moderation slash commands.
 	// bot.Identify.Intents = discordgo.IntentsAll
@@ -97,6 +98,7 @@ func setupBot(token string, guildId string) {
 
 	//Clear slash commands.
 	cmdHandler.ClearCommands(bot, guildId)
-	// Gracefull exit.
+
+	// Gracefully exit.
 	bot.Close()
 }

@@ -1,30 +1,26 @@
 package commands
 
-import "github.com/bwmarrin/discordgo"
+import (
+	"fmt"
+	"github.com/BitCrackers/BitBot/internal/router"
+	"github.com/bwmarrin/discordgo"
+)
 
-type CommandPing struct{}
+var CommandPing = router.Command{
+	Name:          "ping",
+	Description:   "Pong!",
+	Options:       make([]*discordgo.ApplicationCommandOption, 0),
+	AdminRequired: false,
+	Exec: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionApplicationCommandResponseData{
+				Content: "Pong",
+			},
+		})
 
-func (c *CommandPing) Name() string {
-	return "ping"
-}
-
-func (c *CommandPing) Description() string {
-	return "Pong!"
-}
-
-func (c *CommandPing) AdminRequired() bool {
-	return false
-}
-
-func (c *CommandPing) Options() []*discordgo.ApplicationCommandOption {
-	return make([]*discordgo.ApplicationCommandOption, 0)
-}
-
-func (c *CommandPing) Exec(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionApplicationCommandResponseData{
-			Content: "Pong",
-		},
-	})
+		if err != nil {
+			fmt.Printf("error trying to respond to ping command %v", err)
+		}
+	},
 }
