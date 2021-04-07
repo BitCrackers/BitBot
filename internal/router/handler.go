@@ -2,6 +2,7 @@ package router
 
 import (
 	"fmt"
+
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -26,6 +27,8 @@ func (c *CommandHandler) RegisterCommand(cmd Command) {
 		Description: cmd.Description,
 		Options:     cmd.Options,
 	}
+
+	fmt.Printf("> Registering command: %s.\n", cmd.Name)
 
 	c.ApplicationCommands = append(c.ApplicationCommands, &appCommand)
 }

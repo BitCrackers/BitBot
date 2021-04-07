@@ -2,8 +2,9 @@ package commands
 
 import (
 	"fmt"
-	"github.com/BitCrackers/BitBot/internal/router"
 	"strings"
+
+	"github.com/BitCrackers/BitBot/internal/router"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -19,7 +20,6 @@ var CommandParse = router.Command{
 			Required:    true,
 		},
 	},
-	AdminRequired: false,
 	Exec: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		sentence := i.Data.Options[0].StringValue()
 
