@@ -1,4 +1,4 @@
-package commands
+package router
 
 import "github.com/bwmarrin/discordgo"
 

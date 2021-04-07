@@ -1,51 +1,45 @@
 package commands
 
 import (
+	"fmt"
+	"github.com/BitCrackers/BitBot/internal/router"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
 )
 
-type CommandParse struct{}
-
-func (c *CommandParse) Name() string {
-	return "parse"
-}
-
-func (c *CommandParse) Description() string {
-	return "Parses a mesage. Debug command."
-}
-
-func (c *CommandParse) AdminRequired() bool {
-	return false
-}
-
-func (c *CommandParse) Options() []*discordgo.ApplicationCommandOption {
-	return []*discordgo.ApplicationCommandOption{
+var CommandParse = router.Command{
+	Name:        "parse",
+	Description: "Parses a message. Debug command.",
+	Options: []*discordgo.ApplicationCommandOption{
 		{
 			Name:        "sentence",
 			Description: "The sentence that has to be parsed",
 			Type:        discordgo.ApplicationCommandOptionString,
 			Required:    true,
 		},
-	}
-}
+	},
+	AdminRequired: false,
+	Exec: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		sentence := i.Data.Options[0].StringValue()
 
-func (c *CommandParse) Exec(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	sentence := i.Data.Options[0].StringValue()
+		response := ""
+		for _, a := range strings.Fields(sentence) {
+			response += "["
+			response += a
+			response += "] "
+		}
 
-	response := ""
-	for _, a := range strings.Fields(sentence) {
-		response += "["
-		response += a
-		response += "] "
-	}
+		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionApplicationCommandResponseData{
+				Content: response,
+			},
+		})
 
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionApplicationCommandResponseData{
-			Content: response,
-		},
-	})
+		if err != nil {
+			fmt.Printf("error trying to respond to parse command %v", err)
+		}
+	},
 }

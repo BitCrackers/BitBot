@@ -1,25 +1,15 @@
 package commands
 
 import (
+	"fmt"
+	"github.com/BitCrackers/BitBot/internal/router"
 	"github.com/bwmarrin/discordgo"
 )
 
-type CommandKick struct{}
-
-func (c *CommandKick) Name() string {
-	return "kick"
-}
-
-func (c *CommandKick) Description() string {
-	return "Kicks a user from the server."
-}
-
-func (c *CommandKick) AdminRequired() bool {
-	return false
-}
-
-func (c *CommandKick) Options() []*discordgo.ApplicationCommandOption {
-	return []*discordgo.ApplicationCommandOption{
+var CommandKick = router.Command{
+	Name:        "kick",
+	Description: "Kicks a user from the server.",
+	Options: []*discordgo.ApplicationCommandOption{
 		{
 			Name:        "user",
 			Description: "The user to be kicked.",
@@ -32,26 +22,36 @@ func (c *CommandKick) Options() []*discordgo.ApplicationCommandOption {
 			Type:        discordgo.ApplicationCommandOptionString,
 			Required:    true,
 		},
-	}
-}
+	},
+	AdminRequired: true,
+	Exec: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		permissions, err := s.UserChannelPermissions(i.Member.User.ID, i.ChannelID)
+		if err != nil {
+			fmt.Printf("error getting user permissions %v", err)
+		}
 
-func (c *CommandKick) Exec(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		if permissions&discordgo.PermissionKickMembers > 0 {
+			err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionApplicationCommandResponseData{
+					Content: "Kick called.",
+				},
+			})
+			if err != nil {
+				fmt.Printf("error responding to kick %v", err)
+			}
 
-	permissions, _ := s.UserChannelPermissions(i.Member.User.ID, i.ChannelID)
-
-	if permissions&discordgo.PermissionKickMembers > 0 {
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			return
+		}
+		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionApplicationCommandResponseData{
-				Content: "Kick called.",
+				Content: "Kick called but you don't have permissions in this channel to kick people.",
 			},
 		})
-		return
-	}
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionApplicationCommandResponseData{
-			Content: "Kick called but you don't have permissions in this channel to kick people.",
-		},
-	})
+
+		if err != nil {
+			fmt.Printf("error responding to kick %v", err)
+		}
+	},
 }

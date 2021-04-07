@@ -1,25 +1,15 @@
 package commands
 
 import (
+	"fmt"
+	"github.com/BitCrackers/BitBot/internal/router"
 	"github.com/bwmarrin/discordgo"
 )
 
-type CommandBan struct{}
-
-func (c *CommandBan) Name() string {
-	return "ban"
-}
-
-func (c *CommandBan) Description() string {
-	return "Bans a user from the server."
-}
-
-func (c *CommandBan) AdminRequired() bool {
-	return false
-}
-
-func (c *CommandBan) Options() []*discordgo.ApplicationCommandOption {
-	return []*discordgo.ApplicationCommandOption{
+var CommandBan = router.Command{
+	Name:        "ban",
+	Description: "Bans a user from the server.",
+	Options: []*discordgo.ApplicationCommandOption{
 		{
 			Name:        "user",
 			Description: "The user to be banned.",
@@ -32,26 +22,37 @@ func (c *CommandBan) Options() []*discordgo.ApplicationCommandOption {
 			Type:        discordgo.ApplicationCommandOptionString,
 			Required:    true,
 		},
-	}
-}
+	},
+	AdminRequired: true,
+	Exec: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		permissions, err := s.UserChannelPermissions(i.Member.User.ID, i.ChannelID)
+		if err != nil {
+			fmt.Printf("error getting user permissions %v", err)
+		}
 
-func (c *CommandBan) Exec(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		if permissions&discordgo.PermissionBanMembers > 0 {
+			err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionApplicationCommandResponseData{
+					Content: "Ban called.",
+				},
+			})
 
-	permissions, _ := s.UserChannelPermissions(i.Member.User.ID, i.ChannelID)
+			if err != nil {
+				fmt.Printf("error responding to ban %v", err)
+			}
+			return
+		}
 
-	if permissions&discordgo.PermissionBanMembers > 0 {
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionApplicationCommandResponseData{
-				Content: "Ban called.",
+				Content: "Ban called but you don't have permissions in this channel to ban people.",
 			},
 		})
-		return
-	}
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionApplicationCommandResponseData{
-			Content: "Ban called but you don't have permissions in this channel to ban people.",
-		},
-	})
+
+		if err != nil {
+			fmt.Printf("error responding to ban %v", err)
+		}
+	},
 }
