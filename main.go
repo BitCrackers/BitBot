@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/BitCrackers/BitBot/commands"
+	"github.com/BitCrackers/BitBot/events"
 
 	internalCommands "github.com/BitCrackers/BitBot/internal/commands"
 
@@ -37,6 +38,12 @@ func main() {
 		os.Exit(4)
 	}
 
+	// TODO: If this check fails, default to normal commands.
+	if bbGuild == "" {
+		fmt.Println("> $BITBOT_GUILDID has not been exported.")
+		os.Exit(5)
+	}
+
 	// Just for fun at the moment, but we should probably only do this if $BITBOT_DEBUG is true.
 	// TODO: Set up with debug env. variable.
 	fmt.Println("$BITBOT_TOKEN: ", bbToken)
@@ -60,16 +67,17 @@ func setupBot(token string, guildId string) {
 	}
 
 	// Add event handlers here.
+	bot.AddHandler(events.NewMessageHandler().Handler)
 	// Set up command handler.
-	bot.AddHandler(cmdHandler.Handler)
+	bot.AddHandler(cmdHandler.Handler) // Add commands here.
 
-	// Add commands here.
 	cmdHandler.RegisterCommand(&commands.CommandPing{})
 	cmdHandler.RegisterCommand(&commands.CommandParse{})
+	cmdHandler.RegisterCommand(&commands.CommandKick{})
 
-	// Setup bot intents here. For now I just have it as Unprivileged, but we can switch to All easily enough.
+	// Setup bot intents here. GuildMembers is needed for moderation slash commands.
 	// bot.Identify.Intents = discordgo.IntentsAll
-	bot.Identify.Intents = discordgo.IntentsAllWithoutPrivileged
+	bot.Identify.Intents = discordgo.IntentsAll
 
 	err = bot.Open()
 
@@ -87,6 +95,8 @@ func setupBot(token string, guildId string) {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
 
+	//Clear slash commands.
+	cmdHandler.ClearCommands(bot, guildId)
 	// Gracefull exit.
 	bot.Close()
 }
