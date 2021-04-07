@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/BitCrackers/BitBot/commands"
 	"github.com/BitCrackers/BitBot/events"
 
-	internalCommands "github.com/BitCrackers/BitBot/internal/router"
+	"github.com/BitCrackers/BitBot/helpers"
+	"github.com/BitCrackers/BitBot/internal/router"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -21,6 +23,11 @@ func main() {
 	bbDebug := os.Getenv("BITBOT_DEBUG")
 	bbOwner := os.Getenv("BITBOT_OWNERID")
 	bbGuild := os.Getenv("BITBOT_GUILDID")
+
+	d, _ := strconv.ParseBool(bbDebug)
+
+	// Set environment settings.
+	helpers.SetSettings(bbToken, d, bbOwner, bbGuild)
 
 	// Throw specific exit codes along with a helpful message.
 	if bbToken == "" {
@@ -59,7 +66,7 @@ func setupBot(token string, guildId string) {
 	// Create a Discord session.
 	bot, err := discordgo.New("Bot " + token)
 
-	cmdHandler := internalCommands.NewCommandHandler()
+	cmdHandler := router.NewCommandHandler()
 
 	if err != nil {
 		fmt.Println("> ", err)
@@ -71,8 +78,11 @@ func setupBot(token string, guildId string) {
 	// Set up command handler.
 	bot.AddHandler(cmdHandler.Handler) // Add commands here.
 
-	cmdHandler.RegisterCommand(commands.CommandPing)
-	cmdHandler.RegisterCommand(commands.CommandParse)
+	if helpers.GetSettings().Debug {
+		cmdHandler.RegisterCommand(commands.CommandPing)
+		cmdHandler.RegisterCommand(commands.CommandParse)
+	}
+
 	cmdHandler.RegisterCommand(commands.CommandKick)
 	cmdHandler.RegisterCommand(commands.CommandBan)
 
