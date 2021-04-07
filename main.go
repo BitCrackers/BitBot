@@ -6,7 +6,10 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/BitCrackers/BitBot/commands"
 	"github.com/BitCrackers/BitBot/events"
+
+	internalCommands "github.com/BitCrackers/BitBot/internal/commands"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -48,17 +51,25 @@ func setupBot(token string) {
 	// Create a Discord session.
 	bot, err := discordgo.New("Bot " + token)
 
+	cmdHandler := internalCommands.NewCommandHandler("!")
+
 	if err != nil {
 		fmt.Println("> ", err)
 		os.Exit(5)
 	}
 
 	// Add event handlers here.
-	bot.AddHandler(events.OnMessageCreate)
+	bot.AddHandler(events.NewMessageHandler().Handler)
+	// Set up command handler.
+	bot.AddHandler(cmdHandler.HandleMessage)
 
-	// Setup bot intents here. For now I just have it as Messages, but we can switch to All easily enough.
+	// Add commands here.
+	cmdHandler.RegisterCommand(&commands.CommandPing{})
+	cmdHandler.RegisterCommand(&commands.CommandParse{})
+
+	// Setup bot intents here. For now I just have it as Unprivileged, but we can switch to All easily enough.
 	// bot.Identify.Intents = discordgo.IntentsAll
-	bot.Identify.Intents = discordgo.IntentsGuildMessages
+	bot.Identify.Intents = discordgo.IntentsAllWithoutPrivileged
 
 	err = bot.Open()
 
@@ -70,7 +81,7 @@ func setupBot(token string) {
 	// Wait until a termination signal is received.
 	fmt.Println("Bot is running successfully. Press CTRL-C to exit.")
 	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
+	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
 
 	// Gracefull exit.
