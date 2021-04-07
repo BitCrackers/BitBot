@@ -1,8 +1,11 @@
 package commands
 
+import "github.com/bwmarrin/discordgo"
+
 type Command interface {
-	Invokes() []string
+	Name() string
 	Description() string
+	Options() []*discordgo.ApplicationCommandOption
 	AdminRequired() bool
-	Exec(ctx *Context) error
+	Exec(s *discordgo.Session, i *discordgo.InteractionCreate)
 }

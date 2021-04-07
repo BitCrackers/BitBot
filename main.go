@@ -7,7 +7,6 @@ import (
 	"syscall"
 
 	"github.com/BitCrackers/BitBot/commands"
-	"github.com/BitCrackers/BitBot/events"
 
 	internalCommands "github.com/BitCrackers/BitBot/internal/commands"
 
@@ -20,6 +19,7 @@ func main() {
 	bbToken := os.Getenv("BITBOT_TOKEN")
 	bbDebug := os.Getenv("BITBOT_DEBUG")
 	bbOwner := os.Getenv("BITBOT_OWNERID")
+	bbGuild := os.Getenv("BITBOT_GUILDID")
 
 	// Throw specific exit codes along with a helpful message.
 	if bbToken == "" {
@@ -42,11 +42,12 @@ func main() {
 	fmt.Println("$BITBOT_TOKEN: ", bbToken)
 	fmt.Println("$BITBOT_DEBUG: ", bbDebug)
 	fmt.Println("$BITBOT_OWNERID: ", bbOwner)
+	fmt.Println("$BITBOT_GUILDID: ", bbGuild)
 
-	setupBot(bbToken)
+	setupBot(bbToken, bbGuild)
 }
 
-func setupBot(token string) {
+func setupBot(token string, guildId string) {
 
 	// Create a Discord session.
 	bot, err := discordgo.New("Bot " + token)
@@ -59,9 +60,8 @@ func setupBot(token string) {
 	}
 
 	// Add event handlers here.
-	bot.AddHandler(events.NewMessageHandler().Handler)
 	// Set up command handler.
-	bot.AddHandler(cmdHandler.HandleMessage)
+	bot.AddHandler(cmdHandler.Handler)
 
 	// Add commands here.
 	cmdHandler.RegisterCommand(&commands.CommandPing{})
@@ -77,6 +77,9 @@ func setupBot(token string) {
 		fmt.Println("> ", err)
 		os.Exit(6)
 	}
+
+	//Create all the slash commands here as it can only be done after the bot starts
+	cmdHandler.CreateCommands(bot, guildId)
 
 	// Wait until a termination signal is received.
 	fmt.Println("Bot is running successfully. Press CTRL-C to exit.")

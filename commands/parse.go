@@ -1,13 +1,15 @@
 package commands
 
 import (
-	"github.com/BitCrackers/BitBot/internal/commands"
+	"strings"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 type CommandParse struct{}
 
-func (c *CommandParse) Invokes() []string {
-	return []string{"parse"}
+func (c *CommandParse) Name() string {
+	return "parse"
 }
 
 func (c *CommandParse) Description() string {
@@ -18,17 +20,32 @@ func (c *CommandParse) AdminRequired() bool {
 	return false
 }
 
-func (c *CommandParse) Exec(ctx *commands.Context) error {
-	s := ""
-	for _, a := range ctx.Args {
-		s += "["
-		s += a
-		s += "] "
+func (c *CommandParse) Options() []*discordgo.ApplicationCommandOption {
+	return []*discordgo.ApplicationCommandOption{
+		{
+			Name:        "sentence",
+			Description: "The sentence that has to be parsed",
+			Type:        discordgo.ApplicationCommandOptionString,
+			Required:    true,
+		},
+	}
+}
+
+func (c *CommandParse) Exec(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	sentence := i.Data.Options[0].StringValue()
+
+	response := ""
+	for _, a := range strings.Fields(sentence) {
+		response += "["
+		response += a
+		response += "] "
 	}
 
-	_, err := ctx.Session.ChannelMessageSend(ctx.Message.ChannelID, s)
-	if err != nil {
-		return err
-	}
-	return nil
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionApplicationCommandResponseData{
+			Content: response,
+		},
+	})
 }
