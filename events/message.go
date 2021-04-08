@@ -16,6 +16,7 @@ func NewMessageHandler() *MessageHandler {
 	return &MessageHandler{
 		Filters: []router.Filter{
 			filters.AutoMod,
+			filters.Cache,
 		},
 	}
 }
@@ -25,7 +26,6 @@ func (h *MessageHandler) AddFilter(f router.Filter)  {
 }
 
 func (h *MessageHandler) Handler(s *discordgo.Session, m *discordgo.MessageCreate) {
-
 	// We don't want bot logs.
 	if m.Author.Bot || s.State.User.ID == m.Author.ID {
 		return

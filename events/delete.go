@@ -1,6 +1,8 @@
 package events
 
 import (
+	"fmt"
+	"github.com/BitCrackers/BitBot/filters"
 	"github.com/BitCrackers/BitBot/internal/router"
 
 	"github.com/bwmarrin/discordgo"
@@ -21,12 +23,19 @@ func (h *DeleteHandler) AddFilter(f router.Filter)  {
 }
 
 func (h *DeleteHandler) Handler(s *discordgo.Session, d *discordgo.MessageDelete) {
-	// We don't want bot logs.
-
-	if d.Message.Author.Bot || s.State.User.ID == d.Message.Author.ID {
+	m := filters.GetMessageFromCache(d.ID)
+	if m == nil {
+		fmt.Print("Unable to get message from cache")
 		return
 	}
+	filters.DeleteFromCache(d.ID)
+
+	// We don't want bot logs.
+	if m.Author.Bot || s.State.User.ID == m.Author.ID {
+		return
+	}
+
 	for _, f := range h.Filters {
-		f.Exec(s, d.Message)
+		f.Exec(s, m)
 	}
 }
