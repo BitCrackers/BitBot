@@ -75,6 +75,9 @@ func setupBot(token string, guildId string) {
 
 	// Add event handlers here.
 	bot.AddHandler(events.NewMessageHandler().Handler)
+	bot.AddHandler(events.NewEditHandler().Handler)
+	bot.AddHandler(events.NewDeleteHandler().Handler)
+
 	// Set up command handler.
 	bot.AddHandler(cmdHandler.Handler) // Add commands here.
 
@@ -110,5 +113,5 @@ func setupBot(token string, guildId string) {
 	cmdHandler.ClearCommands(bot, guildId)
 
 	// Gracefully exit.
-	bot.Close()
+	_ = bot.Close()
 }

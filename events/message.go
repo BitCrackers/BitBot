@@ -2,14 +2,26 @@ package events
 
 import (
 	"fmt"
+	"github.com/BitCrackers/BitBot/filters"
+	"github.com/BitCrackers/BitBot/internal/router"
 
 	"github.com/bwmarrin/discordgo"
 )
 
-type MessageHandler struct{}
+type MessageHandler struct{
+	Filters []router.Filter
+}
 
 func NewMessageHandler() *MessageHandler {
-	return &MessageHandler{}
+	return &MessageHandler{
+		Filters: []router.Filter{
+			filters.AutoMod,
+		},
+	}
+}
+
+func (h *MessageHandler) AddFilter(f router.Filter)  {
+	h.Filters = append(h.Filters, f)
 }
 
 func (h *MessageHandler) Handler(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -23,7 +35,12 @@ func (h *MessageHandler) Handler(s *discordgo.Session, m *discordgo.MessageCreat
 
 	if err != nil {
 		fmt.Println("Failed getting channel from MessageCreate event: ", err)
-		return
+		return	
 	}
+
+	for _, f := range h.Filters {
+		f.Exec(s, m.Message)
+	}
+
 	fmt.Printf("%s#%s: %s\n", m.Author.Username, m.Author.Discriminator, m.Content)
 }
