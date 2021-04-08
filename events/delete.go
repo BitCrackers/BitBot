@@ -36,6 +36,8 @@ func (h *DeleteHandler) Handler(s *discordgo.Session, d *discordgo.MessageDelete
 	}
 
 	for _, f := range h.Filters {
-		f.Exec(s, m)
+		if !f.Exec(s, m) {
+			break
+		}
 	}
 }

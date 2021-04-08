@@ -8,9 +8,9 @@ import (
 )
 
 var AutoMod = router.Filter{
-	Exec: func(s *discordgo.Session, m *discordgo.Message) {
+	Exec: func(s *discordgo.Session, m *discordgo.Message) bool {
 		if !strings.Contains(m.Content, "balls") {
-			return
+			return true
 		}
 
 		err := s.ChannelMessageDelete(m.ChannelID, m.ID)
@@ -20,7 +20,10 @@ var AutoMod = router.Filter{
 
 		_, err = s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<@%v> you message was deleted because it contained an illegal word", m.Author.ID))
 		if err != nil {
-			fmt.Printf("error trying to delete message %v", err)
+			fmt.Printf("error trying to send message %v", err)
+			return true
 		}
+
+		return false
 	},
 }

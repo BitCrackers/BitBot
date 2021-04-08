@@ -26,6 +26,8 @@ func (h *EditHandler) Handler(s *discordgo.Session, e *discordgo.MessageUpdate) 
 		return
 	}
 	for _, f := range h.Filters {
-		f.Exec(s, e.Message)
+		if !f.Exec(s, e.Message) {
+			break
+		}
 	}
 }

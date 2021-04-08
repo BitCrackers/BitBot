@@ -15,8 +15,8 @@ type MessageHandler struct{
 func NewMessageHandler() *MessageHandler {
 	return &MessageHandler{
 		Filters: []router.Filter{
-			filters.AutoMod,
 			filters.Cache,
+			filters.AutoMod,
 		},
 	}
 }
@@ -39,7 +39,9 @@ func (h *MessageHandler) Handler(s *discordgo.Session, m *discordgo.MessageCreat
 	}
 
 	for _, f := range h.Filters {
-		f.Exec(s, m.Message)
+		if !f.Exec(s, m.Message) {
+			break
+		}
 	}
 
 	fmt.Printf("%s#%s: %s\n", m.Author.Username, m.Author.Discriminator, m.Content)

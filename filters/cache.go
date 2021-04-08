@@ -8,8 +8,9 @@ import (
 var messageCache = map[string]*discordgo.Message{}
 
 var Cache = router.Filter{
-	Exec: func(s *discordgo.Session, m *discordgo.Message) {
+	Exec: func(s *discordgo.Session, m *discordgo.Message) bool {
 		messageCache[m.ID] = m
+		return true
 	},
 }
 
