@@ -10,9 +10,9 @@ import (
 )
 
 type Filters struct {
-	Words    []string
 	Response string
 	Delete   bool
+	RegExp   string
 }
 type Config struct {
 	GuildID string
@@ -29,7 +29,7 @@ var emptyConfig = Config{
 		{
 			Delete:   false,
 			Response: "",
-			Words:    []string{""},
+			RegExp:   "",
 		},
 	},
 	AutoReplyWithBuild: []string{},
