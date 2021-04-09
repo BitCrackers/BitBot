@@ -6,7 +6,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type EditHandler struct{
+type EditHandler struct {
 	Filters []router.Filter
 }
 
@@ -16,7 +16,7 @@ func NewEditHandler() *EditHandler {
 	}
 }
 
-func (h *EditHandler) AddFilter(f router.Filter)  {
+func (h *EditHandler) AddFilter(f router.Filter) {
 	h.Filters = append(h.Filters, f)
 }
 

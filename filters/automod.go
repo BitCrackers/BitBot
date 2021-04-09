@@ -2,6 +2,7 @@ package filters
 
 import (
 	"fmt"
+	"github.com/BitCrackers/BitBot/internal/config"
 	"github.com/BitCrackers/BitBot/internal/router"
 	"github.com/bwmarrin/discordgo"
 	"strings"
@@ -9,7 +10,18 @@ import (
 
 var AutoMod = router.Filter{
 	Exec: func(s *discordgo.Session, m *discordgo.Message) bool {
-		if !strings.Contains(m.Content, "balls") {
+		containsIllegal := false
+
+		for _, b := range config.C.IllegalWords {
+			if !strings.Contains(m.Content, b) {
+				continue
+			}
+
+			containsIllegal = true
+			break
+		}
+
+		if !containsIllegal {
 			return true
 		}
 

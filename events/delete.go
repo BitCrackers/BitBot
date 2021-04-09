@@ -8,7 +8,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type DeleteHandler struct{
+type DeleteHandler struct {
 	Filters []router.Filter
 }
 
@@ -18,7 +18,7 @@ func NewDeleteHandler() *DeleteHandler {
 	}
 }
 
-func (h *DeleteHandler) AddFilter(f router.Filter)  {
+func (h *DeleteHandler) AddFilter(f router.Filter) {
 	h.Filters = append(h.Filters, f)
 }
 

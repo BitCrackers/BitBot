@@ -8,7 +8,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type MessageHandler struct{
+type MessageHandler struct {
 	Filters []router.Filter
 }
 
@@ -21,7 +21,7 @@ func NewMessageHandler() *MessageHandler {
 	}
 }
 
-func (h *MessageHandler) AddFilter(f router.Filter)  {
+func (h *MessageHandler) AddFilter(f router.Filter) {
 	h.Filters = append(h.Filters, f)
 }
 
@@ -35,7 +35,7 @@ func (h *MessageHandler) Handler(s *discordgo.Session, m *discordgo.MessageCreat
 
 	if err != nil {
 		fmt.Println("Failed getting channel from MessageCreate event: ", err)
-		return	
+		return
 	}
 
 	for _, f := range h.Filters {
