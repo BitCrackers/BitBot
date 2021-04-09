@@ -24,9 +24,6 @@
 BitBot checks for a number of environment variables. The current list is:
 
 * `$BITBOT_TOKEN`
-* `$BITBOT_DEBUG`
-* `$BITBOT_OWNERID`
-* `$BITBOT_GUILDID` // This is for slash commands.
 
 ### TOML Config
 
@@ -35,8 +32,9 @@ In addition to the required environment variables, BitBot has a TOML based confi
 
 ## Release Candidate 1 Milestones
 
-* [ ] TOML config for extra functionality.
-* [ ] BITBOT_DEBUG environment variable actually doing something.
+* [ ] TOML config for extra functionality. (In progress)
+* [ ] ~~BITBOT_DEBUG environment variable~~ actually doing something
+    * This was moved into the config but still needs work.
 * [ ] Moderation commands.
     * [x] Kicking
     * [x] Banning

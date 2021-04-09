@@ -2,15 +2,16 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
+
+	"github.com/BitCrackers/BitBot/internal/config"
 
 	"github.com/BitCrackers/BitBot/commands"
 	"github.com/BitCrackers/BitBot/events"
 
-	"github.com/BitCrackers/BitBot/helpers"
 	"github.com/BitCrackers/BitBot/internal/router"
 
 	"github.com/bwmarrin/discordgo"
@@ -19,52 +20,18 @@ import (
 func main() {
 
 	// Check for required environment variables.
+	err := config.Load()
 	bbToken := os.Getenv("BITBOT_TOKEN")
-	bbDebug := os.Getenv("BITBOT_DEBUG")
-	bbOwner := os.Getenv("BITBOT_OWNERID")
-	bbGuild := os.Getenv("BITBOT_GUILDID")
 
-	d, _ := strconv.ParseBool(bbDebug)
-
-	// Set environment settings.
-	helpers.SetSettings(bbToken, d, bbOwner, bbGuild)
-
-	// Throw specific exit codes along with a helpful message.
-	if bbToken == "" {
-		fmt.Println("> $BITBOT_TOKEN has not been exported.")
-		os.Exit(2)
-	}
-
-	if bbDebug == "" {
-		fmt.Println("> $BITBOT_DEBUG has not been exported.")
-		os.Exit(3)
-	}
-
-	if bbOwner == "" {
-		fmt.Println("> $BITBOT_OWNERID has not been exported.")
-		os.Exit(4)
-	}
-
-	// TODO: If this check fails, default to normal commands.
-	if bbGuild == "" {
-		fmt.Println("> $BITBOT_GUILDID has not been exported.")
-		os.Exit(5)
+	if err != nil {
+		log.Fatalf("Unable to load config: %v", err)
 	}
 
 	// Just for fun at the moment, but we should probably only do this if $BITBOT_DEBUG is true.
 	// TODO: Set up with debug env. variable.
 	fmt.Println("$BITBOT_TOKEN: ", bbToken)
-	fmt.Println("$BITBOT_DEBUG: ", bbDebug)
-	fmt.Println("$BITBOT_OWNERID: ", bbOwner)
-	fmt.Println("$BITBOT_GUILDID: ", bbGuild)
 
-	setupBot(bbToken, bbGuild)
-}
-
-func setupBot(token string, guildId string) {
-
-	// Create a Discord session.
-	bot, err := discordgo.New("Bot " + token)
+	bot, err := discordgo.New("Bot " + bbToken)
 
 	cmdHandler := router.NewCommandHandler()
 
@@ -75,10 +42,13 @@ func setupBot(token string, guildId string) {
 
 	// Add event handlers here.
 	bot.AddHandler(events.NewMessageHandler().Handler)
+	bot.AddHandler(events.NewEditHandler().Handler)
+	bot.AddHandler(events.NewDeleteHandler().Handler)
+
 	// Set up command handler.
 	bot.AddHandler(cmdHandler.Handler) // Add commands here.
 
-	if helpers.GetSettings().Debug {
+	if config.C.Debug {
 		cmdHandler.RegisterCommand(commands.CommandPing)
 		cmdHandler.RegisterCommand(commands.CommandParse)
 	}
@@ -98,7 +68,7 @@ func setupBot(token string, guildId string) {
 	}
 
 	//Create all the slash commands here as it can only be done after the bot starts
-	cmdHandler.CreateCommands(bot, guildId)
+	cmdHandler.CreateCommands(bot, config.C.GuildID)
 
 	// Wait until a termination signal is received.
 	fmt.Println("Bot is running successfully. Press CTRL-C to exit.")
@@ -107,8 +77,8 @@ func setupBot(token string, guildId string) {
 	<-sc
 
 	//Clear slash commands.
-	cmdHandler.ClearCommands(bot, guildId)
+	cmdHandler.ClearCommands(bot, config.C.GuildID)
 
 	// Gracefully exit.
-	bot.Close()
+	_ = bot.Close()
 }
