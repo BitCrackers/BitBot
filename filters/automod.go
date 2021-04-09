@@ -2,34 +2,34 @@ package filters
 
 import (
 	"fmt"
-	"github.com/BitCrackers/BitBot/responses"
+	"regexp"
 	"strings"
 
 	"github.com/BitCrackers/BitBot/internal/config"
 	"github.com/BitCrackers/BitBot/internal/router"
+	"github.com/BitCrackers/BitBot/responses"
 	"github.com/bwmarrin/discordgo"
 )
 
 var AutoMod = router.Filter{
 	Exec: func(s *discordgo.Session, m *discordgo.Message) bool {
-		numMatch := 0
 		perfectMatch := false
 		response := ""
 		deleteMessage := false
 
 		for _, f := range config.C.Filters {
-			for _, w := range f.Words {
-				if !strings.Contains(strings.ToLower(m.Content), strings.ToLower(w)) {
-					continue
-				}
-				numMatch += 1
 
-				// We have successfully hit a Filter from the config file.
-				if numMatch == len(f.Words) {
-					perfectMatch = true
-					response = f.Response
-					deleteMessage = f.Delete
-				}
+			r, err := regexp.Compile(f.RegExp)
+
+			if err != nil {
+				fmt.Printf("error trying to compile regex %v\n", err)
+				return true
+			}
+
+			if r.MatchString(m.Content) {
+				perfectMatch = true
+				response = f.Response
+				deleteMessage = f.Delete
 			}
 		}
 
