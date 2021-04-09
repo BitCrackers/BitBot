@@ -23,9 +23,15 @@ type Config struct {
 }
 
 var emptyConfig = Config{
-	GuildID:            "",
-	Debug:              false,
-	Filters:            []Filters{},
+	GuildID: "",
+	Debug:   false,
+	Filters: []Filters{
+		{
+			Delete:   false,
+			Response: "",
+			Words:    []string{""},
+		},
+	},
 	AutoReplyWithBuild: []string{},
 }
 
@@ -39,6 +45,7 @@ func Load() error {
 	}
 
 	if _, err = os.Stat(path.Join(wd, "config.toml")); os.IsNotExist(err) {
+
 		b, err := toml.Marshal(emptyConfig)
 		if err != nil {
 			return err
