@@ -18,18 +18,18 @@ var AutoMod = router.Filter{
 		deleteMessage := false
 
 		for _, f := range config.C.Filters {
+			for _, r := range f.RegExp {
+				if r == "" {
+					continue
+				}
 
-			r, err := regexp.Compile(f.RegExp)
+				r := regexp.MustCompile(r)
 
-			if err != nil {
-				fmt.Printf("error trying to compile regex %v\n", err)
-				return true
-			}
-
-			if r.MatchString(m.Content) {
-				perfectMatch = true
-				response = f.Response
-				deleteMessage = f.Delete
+				if r.MatchString(m.Content) {
+					perfectMatch = true
+					response = f.Response
+					deleteMessage = f.Delete
+				}
 			}
 		}
 

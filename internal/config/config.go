@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -12,7 +13,7 @@ import (
 type Filters struct {
 	Response string
 	Delete   bool
-	RegExp   string
+	RegExp   []string
 }
 type Config struct {
 	GuildID string
@@ -29,7 +30,7 @@ var emptyConfig = Config{
 		{
 			Delete:   false,
 			Response: "",
-			RegExp:   "",
+			RegExp:   []string{""},
 		},
 	},
 	AutoReplyWithBuild: []string{},
@@ -60,12 +61,16 @@ func Load() error {
 	}
 
 	b, err := ioutil.ReadFile(path.Join(wd, "config.toml"))
+
 	if err != nil {
 		return err
 	}
 
-	C = Config{}
 	err = toml.Unmarshal(b, &C)
+
+	for _, f := range C.Filters {
+		fmt.Printf("> Filter Loaded: %s\n", f.RegExp)
+	}
 
 	if err != nil {
 		return err
