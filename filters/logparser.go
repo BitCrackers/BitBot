@@ -2,19 +2,20 @@ package filters
 
 import (
 	"fmt"
-	"github.com/BitCrackers/BitBot/internal/router"
-	"github.com/bwmarrin/discordgo"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
+
+	"github.com/BitCrackers/BitBot/internal/router"
+	"github.com/bwmarrin/discordgo"
 )
 
 type runInfo struct {
 	commitHash string
-	branch string
-	buildType string
-	auVersion string
+	branch     string
+	buildType  string
+	auVersion  string
 }
 
 var LogParser = router.Filter{
@@ -72,46 +73,46 @@ var LogParser = router.Filter{
 		}
 
 		re := *regexp.MustCompile(`^\tBuild:\s(.*)$`)
-		if re.MatchString(strings.TrimSpace(logs[infoIndex + 2])) {
+		if re.MatchString(strings.TrimSpace(logs[infoIndex+2])) {
 			fmt.Printf("invalid log format: unable to find build type\n")
 			return true
 		}
-		r.buildType = strings.Split(logs[infoIndex + 2], ":")[1]
+		r.buildType = strings.Split(logs[infoIndex+2], ":")[1]
 
 		re = *regexp.MustCompile(`^\tCommit: (.*) - (.*)$`)
-		if re.MatchString(strings.TrimSpace(logs[infoIndex + 3])) {
+		if re.MatchString(strings.TrimSpace(logs[infoIndex+3])) {
 			fmt.Printf("invalid log format: unable to find git info\n")
 			return true
 		}
-		git := strings.Split(logs[infoIndex + 3], ":")[1]
+		git := strings.Split(logs[infoIndex+3], ":")[1]
 		r.commitHash = strings.TrimSpace(strings.Split(git, " - ")[0])
 		r.branch = strings.TrimSpace(strings.Split(git, " - ")[1])
 
 		re = *regexp.MustCompile(`^\tAmong Us Version: (.*)$`)
-		if re.MatchString(strings.TrimSpace(logs[infoIndex + 4])) {
+		if re.MatchString(strings.TrimSpace(logs[infoIndex+4])) {
 			fmt.Printf("invalid log format: unable to find among us version\n")
 			return true
 		}
-		r.auVersion = strings.Split(logs[infoIndex + 4], ":")[1]
+		r.auVersion = strings.Split(logs[infoIndex+4], ":")[1]
 		embed := discordgo.MessageEmbed{
 			Title: "AmongUsMenu log",
 			Fields: []*discordgo.MessageEmbedField{
-				&discordgo.MessageEmbedField{
+				{
 					Name:   "Build type",
 					Value:  r.buildType,
 					Inline: false,
 				},
-				&discordgo.MessageEmbedField{
+				{
 					Name:   "AU Version",
 					Value:  r.auVersion,
 					Inline: false,
 				},
-				&discordgo.MessageEmbedField{
+				{
 					Name:   "Git branch",
 					Value:  r.branch,
 					Inline: false,
 				},
-				&discordgo.MessageEmbedField{
+				{
 					Name:   "Git commit",
 					Value:  fmt.Sprintf("[%s](https://github.com/BitCrackers/AmongUsMenu/commit/%s)", r.commitHash[0:7], r.commitHash),
 					Inline: false,

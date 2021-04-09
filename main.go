@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/BitCrackers/BitBot/internal/config"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/BitCrackers/BitBot/internal/config"
 
 	"github.com/BitCrackers/BitBot/commands"
 	"github.com/BitCrackers/BitBot/events"
@@ -29,7 +30,6 @@ func main() {
 	// Just for fun at the moment, but we should probably only do this if $BITBOT_DEBUG is true.
 	// TODO: Set up with debug env. variable.
 	fmt.Println("$BITBOT_TOKEN: ", bbToken)
-	fmt.Println("$BITBOT_GUILDID: ", config.C.GuildID)
 
 	bot, err := discordgo.New("Bot " + bbToken)
 

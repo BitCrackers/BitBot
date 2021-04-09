@@ -2,24 +2,30 @@ package config
 
 import (
 	"errors"
-	"github.com/pelletier/go-toml"
 	"io/ioutil"
 	"os"
 	"path"
+
+	"github.com/pelletier/go-toml"
 )
 
+type Filters struct {
+	Words    []string
+	Response string
+	Delete   bool
+}
 type Config struct {
 	GuildID string
 	Debug   bool
 
-	IllegalWords []string
+	Filters            []Filters
 	AutoReplyWithBuild []string
 }
 
 var emptyConfig = Config{
-	GuildID:      "",
-	Debug:        false,
-	IllegalWords: []string{},
+	GuildID:            "",
+	Debug:              false,
+	Filters:            []Filters{},
 	AutoReplyWithBuild: []string{},
 }
 

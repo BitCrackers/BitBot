@@ -2,10 +2,11 @@ package filters
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/BitCrackers/BitBot/internal/config"
 	"github.com/BitCrackers/BitBot/internal/router"
 	"github.com/bwmarrin/discordgo"
-	"strings"
 )
 
 var AutoReply = router.Filter{
@@ -28,12 +29,12 @@ var AutoReply = router.Filter{
 		embed := discordgo.MessageEmbed{
 			Title: "Builds",
 			Fields: []*discordgo.MessageEmbedField{
-				&discordgo.MessageEmbedField{
+				{
 					Name:   "Version Proxy",
 					Value:  "[download](https://github.com/BitCrackers/AmongUsMenu)",
 					Inline: true,
 				},
-				&discordgo.MessageEmbedField{
+				{
 					Name:   "Injectable",
 					Value:  "[download](https://github.com/BitCrackers/AmongUsMenu)",
 					Inline: true,
