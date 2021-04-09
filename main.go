@@ -20,16 +20,18 @@ func main() {
 
 	// Check for required environment variables.
 	err := config.Load()
+	bbToken := os.Getenv("BITBOT_TOKEN")
+
 	if err != nil {
 		log.Fatalf("Unable to load config: %v", err)
 	}
 
 	// Just for fun at the moment, but we should probably only do this if $BITBOT_DEBUG is true.
 	// TODO: Set up with debug env. variable.
-	fmt.Println("$BITBOT_TOKEN: ", config.C.Token)
+	fmt.Println("$BITBOT_TOKEN: ", bbToken)
 	fmt.Println("$BITBOT_GUILDID: ", config.C.GuildID)
 
-	bot, err := discordgo.New("Bot " + config.C.Token)
+	bot, err := discordgo.New("Bot " + bbToken)
 
 	cmdHandler := router.NewCommandHandler()
 

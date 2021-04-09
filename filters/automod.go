@@ -13,7 +13,7 @@ var AutoMod = router.Filter{
 		containsIllegal := false
 
 		for _, b := range config.C.IllegalWords {
-			if !strings.Contains(m.Content, b) {
+			if !strings.Contains(strings.ToLower(m.Content), strings.ToLower(b)) {
 				continue
 			}
 

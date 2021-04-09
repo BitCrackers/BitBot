@@ -17,6 +17,8 @@ func NewMessageHandler() *MessageHandler {
 		Filters: []router.Filter{
 			filters.Cache,
 			filters.AutoMod,
+			filters.AutoReply,
+			filters.LogParser,
 		},
 	}
 }

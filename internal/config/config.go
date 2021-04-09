@@ -9,18 +9,18 @@ import (
 )
 
 type Config struct {
-	Token   string
 	GuildID string
 	Debug   bool
 
 	IllegalWords []string
+	AutoReplyWithBuild []string
 }
 
 var emptyConfig = Config{
-	Token:        "",
 	GuildID:      "",
 	Debug:        false,
 	IllegalWords: []string{},
+	AutoReplyWithBuild: []string{},
 }
 
 var C Config
