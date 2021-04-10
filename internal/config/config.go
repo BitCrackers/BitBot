@@ -19,8 +19,8 @@ type Config struct {
 	GuildID string
 	Debug   bool
 
-	Filters            []Filters
-	AutoReplyWithBuild []string
+	Filters    []Filters
+	Moderators []string
 }
 
 var emptyConfig = Config{
@@ -33,7 +33,7 @@ var emptyConfig = Config{
 			RegExp:   []string{""},
 		},
 	},
-	AutoReplyWithBuild: []string{},
+	Moderators: []string{""},
 }
 
 var C Config

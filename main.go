@@ -27,10 +27,6 @@ func main() {
 		log.Fatalf("Unable to load config: %v", err)
 	}
 
-	// Just for fun at the moment, but we should probably only do this if $BITBOT_DEBUG is true.
-	// TODO: Set up with debug env. variable.
-	fmt.Println("$BITBOT_TOKEN: ", bbToken)
-
 	bot, err := discordgo.New("Bot " + bbToken)
 
 	cmdHandler := router.NewCommandHandler()
@@ -53,8 +49,10 @@ func main() {
 		cmdHandler.RegisterCommand(commands.CommandParse)
 	}
 
+	// Moderation Commands
 	cmdHandler.RegisterCommand(commands.CommandKick)
 	cmdHandler.RegisterCommand(commands.CommandBan)
+	cmdHandler.RegisterCommand(commands.CommandReload)
 
 	// Setup bot intents here. GuildMembers is needed for moderation slash commands.
 	// bot.Identify.Intents = discordgo.IntentsAll
