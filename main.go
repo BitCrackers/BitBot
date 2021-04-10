@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/BitCrackers/BitBot/internal/database"
 	"log"
 	"os"
 	"os/signal"
@@ -26,6 +27,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Unable to load config: %v", err)
 	}
+
+	err = database.Start()
+	if err != nil {
+		log.Fatalf("Unable to start database: %v", err)
+	}
+	defer database.DB.Close()
 
 	bot, err := discordgo.New("Bot " + bbToken)
 
@@ -53,6 +60,7 @@ func main() {
 	cmdHandler.RegisterCommand(commands.CommandKick)
 	cmdHandler.RegisterCommand(commands.CommandBan)
 	cmdHandler.RegisterCommand(commands.CommandReload)
+	cmdHandler.RegisterCommand(commands.CommandWarn)
 
 	// Setup bot intents here. GuildMembers is needed for moderation slash commands.
 	// bot.Identify.Intents = discordgo.IntentsAll
@@ -73,7 +81,6 @@ func main() {
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
-
 	//Clear slash commands.
 	cmdHandler.ClearCommands(bot, config.C.GuildID)
 

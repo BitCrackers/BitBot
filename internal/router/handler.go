@@ -51,13 +51,14 @@ func (c *CommandHandler) CreateCommands(s *discordgo.Session, guildId string) {
 func (c *CommandHandler) ClearCommands(s *discordgo.Session, guildId string) {
 	commands, err := s.ApplicationCommands(s.State.User.ID, guildId)
 	if err != nil {
-		fmt.Printf("Cannot fetch existing commands")
+		fmt.Printf("Cannot fetch existing commands\n")
 	}
 
 	for _, c := range commands {
 		err := s.ApplicationCommandDelete(s.State.User.ID, guildId, c.ID)
 		if err != nil {
-			fmt.Printf("Cannot delete command: %v", err)
+			fmt.Printf("Cannot delete command: %v\n", err)
 		}
+		fmt.Printf("Deleted command: %v\n", c.ID)
 	}
 }

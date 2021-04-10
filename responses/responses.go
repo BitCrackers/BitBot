@@ -74,11 +74,11 @@ var responses = []router.Response{
 
 			_, err = s.ChannelMessageSendEmbed(m.ChannelID, &embed)
 			if err != nil {
-					return err
-				}
-				return nil
-			},
+				return err
+			}
+			return nil
 		},
+	},
 }
 
 func GetCustomResponse(name string) (*router.Response, error) {
@@ -90,4 +90,3 @@ func GetCustomResponse(name string) (*router.Response, error) {
 	}
 	return nil, errors.New("could not find custom response")
 }
-
