@@ -16,10 +16,11 @@ type Filter struct {
 	Delete   bool
 	RegExp   []string
 }
-type Config struct {
-	GuildID string
-	Debug   bool
 
+type Config struct {
+	GuildID    string
+	Debug      bool
+	MuteRoleId string
 	Filters    []Filter
 	Moderators []string
 }

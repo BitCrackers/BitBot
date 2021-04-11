@@ -12,7 +12,7 @@ func (ch *CommandHandler) WarnCommand() *Command {
 		Options: []*discordgo.ApplicationCommandOption{
 			{
 				Name:        "user",
-				Description: "The user to be kicked.",
+				Description: "The user to be warned.",
 				Type:        discordgo.ApplicationCommandOptionUser,
 				Required:    true,
 			},
@@ -37,7 +37,7 @@ func (ch *CommandHandler) handleWarn(s *discordgo.Session, i *discordgo.Interact
 	if len(i.Data.Options) > 1 {
 		reason = i.Data.Options[1].StringValue()
 	} else {
-		reason = ""
+		reason = "unknown"
 	}
 
 	if permissions&discordgo.PermissionKickMembers > 0 {

@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/BitCrackers/BitBot/commands"
 	"github.com/BitCrackers/BitBot/config"
-    "github.com/BitCrackers/BitBot/database"
+	"github.com/BitCrackers/BitBot/database"
 	"github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
@@ -41,9 +41,8 @@ func main() {
 	}
 
 	cmdHandler := commands.CommandHandler{
-		DB:         db,
-		Moderators: cfg.Moderators,
-		Debug:      cfg.Debug,
+		DB:     db,
+		Config: &cfg,
 	}
 
 	// Setup session intents here. GuildMembers is needed for moderation slash commands.
