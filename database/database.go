@@ -6,19 +6,19 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	_ "github.com/mattn/go-sqlite3"
-	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"time"
 )
 
 type Database struct {
-	db *sql.DB
+	underlying *sql.DB
 }
 
 const (
-	Mute = iota
-	Ban
+	PunishmentTypeMute = iota
+	PunishmentTypeBan
 )
 
 type Warning struct {
@@ -35,17 +35,16 @@ type Punishment struct {
 	Date      time.Time `json:"Date"`
 }
 
-var DB Database
-
-func Start() error {
-	wd, err := os.Getwd()
-	DB = Database{}
-
+func New() (*Database, error) {
+	ex, err := os.Executable()
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("error while getting executable directory: %v", err)
 	}
-	sqlQuery := ``
-	if _, err = os.Stat(path.Join(wd, "bitbot.db")); os.IsNotExist(err) {
+	ex = filepath.ToSlash(ex) // For the operating systems which use backslash...
+	dbPath := path.Join(path.Dir(ex), "bitbot.db")
+
+	sqlQuery := ""
+	if _, err = os.Stat(dbPath); os.IsNotExist(err) {
 		sqlQuery = `
 	CREATE TABLE userinfo (
 	id INT NOT NULL,
@@ -56,21 +55,19 @@ func Start() error {
 	`
 	}
 
-	db, err := sql.Open("sqlite3", path.Join(wd, "bitbot.db"))
+	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("error while opening db file: %v", err)
 	}
 
 	if sqlQuery != "" {
 		_, err = db.Exec(sqlQuery)
 		if err != nil {
-			log.Printf("%q: %s\n", err, sqlQuery)
-			return err
+			return nil, err
 		}
 	}
 
-	DB.db = db
-	return nil
+	return &Database{db}, nil
 }
 
 func (d *Database) WarnUser(user *discordgo.User, moderator *discordgo.User, reason string) error {
@@ -87,8 +84,7 @@ func (d *Database) WarnUser(user *discordgo.User, moderator *discordgo.User, rea
 	}
 
 	sqlStmt := `SELECT warnings FROM userinfo WHERE id = ?`
-	row := d.db.QueryRow(sqlStmt, user.ID)
-
+	row := d.underlying.QueryRow(sqlStmt, user.ID)
 	var s sql.NullString
 
 	err = row.Scan(&s)
@@ -126,7 +122,7 @@ func (d *Database) WarnUser(user *discordgo.User, moderator *discordgo.User, rea
 		return err
 	}
 
-	tx, err := d.db.Begin()
+	tx, err := d.underlying.Begin()
 	if err != nil {
 		return err
 	}
@@ -153,20 +149,17 @@ func (d *Database) WarnUser(user *discordgo.User, moderator *discordgo.User, rea
 func (d *Database) UserRecordExists(user *discordgo.User) (bool, error) {
 	sqlStmt := `SELECT id FROM userinfo WHERE id = ?`
 	var id int
-	err := d.db.QueryRow(sqlStmt, user.ID).Scan(&id)
-	if err != nil {
-		if err != sql.ErrNoRows {
-			return false, err
-		}
-
+	err := d.underlying.QueryRow(sqlStmt, user.ID).Scan(&id)
+	if err == sql.ErrNoRows {
 		return false, nil
+	} else if err != nil {
+		return false, err
 	}
-
 	return true, nil
 }
 
 func (d *Database) CreateUserRecord(user *discordgo.User) error {
-	tx, err := d.db.Begin()
+	tx, err := d.underlying.Begin()
 	if err != nil {
 		return err
 	}
@@ -191,5 +184,5 @@ func (d *Database) CreateUserRecord(user *discordgo.User) error {
 }
 
 func (d *Database) Close() error {
-	return d.db.Close()
+	return d.underlying.Close()
 }

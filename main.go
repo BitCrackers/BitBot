@@ -1,89 +1,97 @@
 package main
 
 import (
-	"fmt"
-	"github.com/BitCrackers/BitBot/internal/database"
-	"log"
+	"github.com/BitCrackers/BitBot/commands"
+	"github.com/BitCrackers/BitBot/config"
+    "github.com/BitCrackers/BitBot/database"
+	"github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/BitCrackers/BitBot/internal/config"
-
-	"github.com/BitCrackers/BitBot/commands"
-	"github.com/BitCrackers/BitBot/events"
-
-	"github.com/BitCrackers/BitBot/internal/router"
-
 	"github.com/bwmarrin/discordgo"
 )
 
+
+
 func main() {
-
 	// Check for required environment variables.
-	err := config.Load()
-	bbToken := os.Getenv("BITBOT_TOKEN")
+	token := os.Getenv("BITBOT_TOKEN")
+	if token == "" {
+		logrus.Fatalf("Couldn't read token from BITBOT_TOKEN environment variable")
+	}
 
+	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("Unable to load config: %v", err)
+		logrus.Fatalf("Unable to load config: %v", err)
+	}
+	if cfg.GuildID == "" {
+		panic("you were just saved from waiting 2 hours for discord to register slash commands globally")
 	}
 
-	err = database.Start()
+	db, err := database.New()
 	if err != nil {
-		log.Fatalf("Unable to start database: %v", err)
+		logrus.Fatalf("Unable to start database: %v", err)
 	}
-	defer database.DB.Close()
+	defer db.Close()
 
-	bot, err := discordgo.New("Bot " + bbToken)
-
-	cmdHandler := router.NewCommandHandler()
-
+	session, err := discordgo.New("Bot " + token)
 	if err != nil {
-		fmt.Println("> ", err)
-		os.Exit(5)
+		logrus.Fatalf("Error while creating session: %v", err)
 	}
 
-	// Add event handlers here.
-	bot.AddHandler(events.NewMessageHandler().Handler)
-	bot.AddHandler(events.NewEditHandler().Handler)
-	bot.AddHandler(events.NewDeleteHandler().Handler)
-
-	// Set up command handler.
-	bot.AddHandler(cmdHandler.Handler) // Add commands here.
-
-	if config.C.Debug {
-		cmdHandler.RegisterCommand(commands.CommandPing)
-		cmdHandler.RegisterCommand(commands.CommandParse)
+	cmdHandler := commands.CommandHandler{
+		DB:         db,
+		Moderators: cfg.Moderators,
+		Debug:      cfg.Debug,
 	}
 
-	// Moderation Commands
-	cmdHandler.RegisterCommand(commands.CommandKick)
-	cmdHandler.RegisterCommand(commands.CommandBan)
-	cmdHandler.RegisterCommand(commands.CommandReload)
-	cmdHandler.RegisterCommand(commands.CommandWarn)
+	// Setup session intents here. GuildMembers is needed for moderation slash commands.
+	session.Identify.Intents = discordgo.IntentsAll
 
-	// Setup bot intents here. GuildMembers is needed for moderation slash commands.
-	// bot.Identify.Intents = discordgo.IntentsAll
-	bot.Identify.Intents = discordgo.IntentsAll
-
-	err = bot.Open()
-
-	if err != nil {
-		fmt.Println("> ", err)
-		os.Exit(6)
+	// Register handlers for filters.
+	for _, filter := range cfg.Filters {
+		handler, err := newFilterHandler(filter)
+		if err != nil {
+			logrus.Errorf("Error while creating filter: %v", err)
+		}
+		session.AddHandler(handler)
 	}
 
-	//Create all the slash commands here as it can only be done after the bot starts
-	cmdHandler.CreateCommands(bot, config.C.GuildID)
+	session.AddHandler(aumLog)
+
+	if err = session.Open(); err != nil {
+		logrus.Fatalf("Error while opening session: %v", err)
+	}
+
+	cmds := cmdHandler.Commands()
+
+	// Contains all registered commands to avoid deleting commands where an error
+	// occurred during registration and running into a panic.
+	var registeredCmds []*commands.Command
+	for _, cmd := range cmds {
+		logrus.Infof("Registering slash command: %v", cmd.Name)
+		if err = cmd.Register(session, cfg.GuildID); err != nil {
+			logrus.Errorf("Error while registering %v command: %v", cmd.Name, err)
+			continue
+		}
+		registeredCmds = append(registeredCmds, cmd)
+	}
 
 	// Wait until a termination signal is received.
-	fmt.Println("Bot is running successfully. Press CTRL-C to exit.")
+	logrus.Infof("Bot is running successfully. Press CTRL-C to exit.")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
-	//Clear slash commands.
-	cmdHandler.ClearCommands(bot, config.C.GuildID)
+
+	// Clear slash commands.
+	for _, cmd := range registeredCmds {
+		logrus.Infof("Deleting slash command: %v", cmd.Name)
+		if err = cmd.Delete(); err != nil {
+			logrus.Errorf("Error while deleting command: %v", err)
+		}
+	}
 
 	// Gracefully exit.
-	_ = bot.Close()
+	session.Close()
 }
