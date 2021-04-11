@@ -7,7 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (ch *CommandHandler) UnMuteCommand() *Command {
+func (ch *CommandHandler) UnmuteCommand() *Command {
 	return &Command{
 		Name:        "unmute",
 		Description: "Removes mute from a user.",
@@ -37,7 +37,7 @@ func (ch *CommandHandler) handleUnMute(s *discordgo.Session, i *discordgo.Intera
 
 	u, err := ch.DB.GetUserRecord(i.Data.Options[0].UserValue(s))
 	if err != nil {
-		logrus.Errorf("Error fetching user record: %s\n", err)
+		logrus.Errorf("Error fetching user record: %s", err)
 		RespondWithError(s, i, "Couldn't fetch user record")
 		return
 	}

@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"fmt"
+	"github.com/sirupsen/logrus"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -24,6 +24,6 @@ func (ch *CommandHandler) handlePing(s *discordgo.Session, i *discordgo.Interact
 	})
 
 	if err != nil {
-		fmt.Printf("error trying to respond to ping command %v", err)
+		logrus.Errorf("error trying to respond to ping command %v", err)
 	}
 }

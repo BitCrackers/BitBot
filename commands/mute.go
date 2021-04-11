@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/sirupsen/logrus"
-	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -92,7 +91,7 @@ func (ch *CommandHandler) handleMute(s *discordgo.Session, i *discordgo.Interact
 	if !u.Mute.Empty() {
 		muteExpire := "never"
 		if u.Mute.Length != -1 {
-			muteExpire = u.Mute.Date.Add(time.Duration(u.Mute.Length)).Sub(u.Mute.Date).String()
+			muteExpire = u.Mute.Date.Add(time.Duration(u.Mute.Length) * time.Second).Sub(time.Now()).String()
 		}
 		logrus.Errorf("User is already muted\n*Mute expires:%s*", muteExpire)
 		RespondWithError(s, i, fmt.Sprintf("User is already muted\n*Mute expires: %s*", muteExpire))
@@ -113,10 +112,15 @@ func (ch *CommandHandler) handleMute(s *discordgo.Session, i *discordgo.Interact
 		return
 	}
 
+	muteLength := "indefinite"
+	if muteTime != -1 {
+		muteLength = (time.Duration(muteTime) * time.Second).String()
+	}
+
 	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionApplicationCommandResponseData{
-			Content: fmt.Sprintf("**User %s#%s Muted**\n*Reason: %s*\n*Length: %s*", i.Data.Options[0].UserValue(s).Username, i.Data.Options[0].UserValue(s).Discriminator, reason, secondsToString(muteTime)),
+			Content: fmt.Sprintf("**User %s#%s Muted**\n*Reason: %s*\n*Length: %s*", i.Data.Options[0].UserValue(s).Username, i.Data.Options[0].UserValue(s).Discriminator, reason, muteLength),
 		},
 	})
 	if err != nil {
@@ -157,52 +161,4 @@ func timeStringToSeconds(t string) (int, error) {
 	}
 
 	return time * multi, nil
-}
-
-//https://www.socketloop.com/tutorials/golang-convert-seconds-to-human-readable-time-format-example
-func plural(count int, singular string) (result string) {
-	if count == 1 {
-		result = strconv.Itoa(count) + " " + singular + " "
-	} else {
-		result = strconv.Itoa(count) + " " + singular + "s "
-	}
-	return
-}
-
-func secondsToString(input int) (result string) {
-	if input == -1 {
-		result = "indefinite"
-		return
-	}
-	years := math.Floor(float64(input) / 60 / 60 / 24 / 7 / 30 / 12)
-	seconds := input % (60 * 60 * 24 * 7 * 30 * 12)
-	months := math.Floor(float64(seconds) / 60 / 60 / 24 / 7 / 30)
-	seconds = input % (60 * 60 * 24 * 7 * 30)
-	weeks := math.Floor(float64(seconds) / 60 / 60 / 24 / 7)
-	seconds = input % (60 * 60 * 24 * 7)
-	days := math.Floor(float64(seconds) / 60 / 60 / 24)
-	seconds = input % (60 * 60 * 24)
-	hours := math.Floor(float64(seconds) / 60 / 60)
-	seconds = input % (60 * 60)
-	minutes := math.Floor(float64(seconds) / 60)
-	seconds = input % 60
-
-	if years > 0 {
-		result = plural(int(years), "year") + plural(int(months), "month") + plural(int(weeks), "week") + plural(int(days), "day") + plural(int(hours), "hour") + plural(int(minutes), "minute") + plural(seconds, "second")
-	} else if months > 0 {
-		result = plural(int(months), "month") + plural(int(weeks), "week") + plural(int(days), "day") + plural(int(hours), "hour") + plural(int(minutes), "minute") + plural(seconds, "second")
-	} else if weeks > 0 {
-		result = plural(int(weeks), "week") + plural(int(days), "day") + plural(int(hours), "hour") + plural(int(minutes), "minute") + plural(seconds, "second")
-	} else if days > 0 {
-		result = plural(int(days), "day") + plural(int(hours), "hour") + plural(int(minutes), "minute") + plural(int(seconds), "second")
-	} else if hours > 0 {
-		result = plural(int(hours), "hour") + plural(int(minutes), "minute") + plural(seconds, "second")
-	} else if minutes > 0 {
-		result = plural(int(minutes), "minute") + plural(seconds, "second")
-	} else {
-		result = plural(seconds, "second")
-	}
-	result = strings.TrimSpace(result)
-
-	return
 }

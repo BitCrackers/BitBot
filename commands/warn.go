@@ -2,7 +2,9 @@ package commands
 
 import (
 	"fmt"
+
 	"github.com/bwmarrin/discordgo"
+	"github.com/sirupsen/logrus"
 )
 
 func (ch *CommandHandler) WarnCommand() *Command {
@@ -30,7 +32,12 @@ func (ch *CommandHandler) WarnCommand() *Command {
 func (ch *CommandHandler) handleWarn(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	permissions, err := s.UserChannelPermissions(i.Member.User.ID, i.ChannelID)
 	if err != nil {
-		fmt.Printf("Error getting user permissions %s", err.Error())
+		logrus.Errorf("Error getting user permissions %v", err)
+		RespondWithError(s, i, "Error fetching user permissions")
+	}
+
+	if permissions&discordgo.PermissionKickMembers < 0 {
+		return
 	}
 
 	var reason string
@@ -40,24 +47,23 @@ func (ch *CommandHandler) handleWarn(s *discordgo.Session, i *discordgo.Interact
 		reason = "unknown"
 	}
 
-	if permissions&discordgo.PermissionKickMembers > 0 {
+	err = ch.DB.WarnUser(i.Data.Options[0].UserValue(s), i.Member.User, reason)
 
-		err = ch.DB.WarnUser(i.Data.Options[0].UserValue(s), i.Member.User, reason)
-
-		if err != nil {
-			fmt.Printf("Error warning user: %s\n", err)
-		}
-
-		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionApplicationCommandResponseData{
-				Content: fmt.Sprintf("**User %s#%s Warned**\n*Reason: %s*", i.Data.Options[0].UserValue(s).Username, i.Data.Options[0].UserValue(s).Discriminator, reason),
-			},
-		})
-		if err != nil {
-			fmt.Printf("Error responding to warn %s", err.Error())
-		}
-
+	if err != nil {
+		fmt.Printf("Error warning user: %s\n", err)
+		RespondWithError(s, i, "Error warning user")
 		return
 	}
+
+	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionApplicationCommandResponseData{
+			Content: fmt.Sprintf("**User %s#%s Warned**\n*Reason: %s*", i.Data.Options[0].UserValue(s).Username, i.Data.Options[0].UserValue(s).Discriminator, reason),
+		},
+	})
+	if err != nil {
+		logrus.Errorf("Error responding to warn %v", err)
+	}
+
+	return
 }

@@ -87,8 +87,7 @@ func (d *Database) WarnUser(user *discordgo.User, moderator *discordgo.User, rea
 		Moderator: moderator.ID,
 		Date:      time.Now(),
 	})
-	err = d.SetUserRecord(userRecord)
-	return err
+	return d.SetUserRecord(userRecord)
 }
 
 func (d *Database) MuteUser(user *discordgo.User, moderator *discordgo.User, reason string, length int) error {
@@ -184,7 +183,6 @@ func (d *Database) GetUserRecord(user *discordgo.User) (UserRecord, error) {
 	if warningsString != "" {
 		err = json.Unmarshal([]byte(warningsString), &userRecord.Warnings)
 		if err != nil {
-			fmt.Printf("unable to unmarshal warnings object: %s\n", warningsString)
 			return UserRecord{}, err
 		}
 	}
@@ -199,7 +197,6 @@ func (d *Database) GetUserRecord(user *discordgo.User) (UserRecord, error) {
 	if muteString != "" {
 		err = json.Unmarshal([]byte(muteString), &mute)
 		if err != nil {
-			fmt.Printf("unable to unmarshal mute object: %s", muteString)
 			return UserRecord{}, err
 		}
 	}
@@ -215,7 +212,6 @@ func (d *Database) GetUserRecord(user *discordgo.User) (UserRecord, error) {
 	if banString != "" {
 		err = json.Unmarshal([]byte(banString), &ban)
 		if err != nil {
-			fmt.Printf("unable to unmarshal ban object: %s\n", banString)
 			return UserRecord{}, err
 		}
 	}
@@ -232,7 +228,6 @@ func (d *Database) SetUserRecord(record UserRecord) error {
 	if len(record.Warnings) > 0 {
 		b, err := json.Marshal(record.Warnings)
 		if err != nil {
-			fmt.Printf("unable to marshal warnings object\n")
 			return err
 		}
 		warnings.String = string(b)
@@ -246,7 +241,6 @@ func (d *Database) SetUserRecord(record UserRecord) error {
 	if !record.Mute.Empty() {
 		b, err := json.Marshal(record.Mute)
 		if err != nil {
-			fmt.Printf("unable to marshal mute object\n")
 			return err
 		}
 		mute.String = string(b)
@@ -260,7 +254,6 @@ func (d *Database) SetUserRecord(record UserRecord) error {
 	if !record.Ban.Empty() {
 		b, err := json.Marshal(record.Mute)
 		if err != nil {
-			fmt.Printf("unable to marshal ban object\n")
 			return err
 		}
 		ban.String = string(b)

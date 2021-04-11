@@ -23,13 +23,12 @@ func (ch *CommandHandler) Commands() []*Command {
 		ch.WarnCommand(),
 		ch.BuildsCommand(),
 		ch.MuteCommand(),
-		ch.UnMuteCommand(),
+		ch.UnmuteCommand(),
 	}
 	if ch.Config.Debug {
 		return append(
 			cmds,
 			ch.PingCommand(),
-			ch.ParseCommand(),
 		)
 	}
 	return cmds

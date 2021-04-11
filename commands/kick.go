@@ -3,6 +3,8 @@ package commands
 import (
 	"fmt"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -31,7 +33,13 @@ func (ch *CommandHandler) KickCommand() *Command {
 func (ch *CommandHandler) handleKick(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	permissions, err := s.UserChannelPermissions(i.Member.User.ID, i.ChannelID)
 	if err != nil {
-		fmt.Printf("Error getting user permissions %s", err.Error())
+		logrus.Errorf("Error getting user permissions %v", err)
+		RespondWithError(s, i, "Error fetching user permissions")
+		return
+	}
+
+	if permissions&discordgo.PermissionKickMembers < 0 {
+		return
 	}
 
 	var reason string
@@ -40,24 +48,24 @@ func (ch *CommandHandler) handleKick(s *discordgo.Session, i *discordgo.Interact
 	} else {
 		reason = fmt.Sprintf("Kicked by: %s#%s.", i.Member.User.Username, i.Member.User.Discriminator)
 	}
-	if permissions&discordgo.PermissionKickMembers > 0 {
 
-		err := s.GuildMemberDeleteWithReason(i.GuildID, i.Data.Options[0].UserValue(s).ID, reason)
+	err = s.GuildMemberDeleteWithReason(i.GuildID, i.Data.Options[0].UserValue(s).ID, reason)
 
-		if err != nil {
-			fmt.Printf("Error kicking user: %s", err.Error())
-		}
-
-		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionApplicationCommandResponseData{
-				Content: fmt.Sprintf("**User %s#%s Kicked**\n*Reason: %s*", i.Data.Options[0].UserValue(s).Username, i.Data.Options[0].UserValue(s).Discriminator, reason),
-			},
-		})
-		if err != nil {
-			fmt.Printf("Error responding to kick %s", err.Error())
-		}
-
+	if err != nil {
+		logrus.Errorf("Error kicking user: %v", err)
+		RespondWithError(s, i, "Error kicking user")
 		return
 	}
+
+	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionApplicationCommandResponseData{
+			Content: fmt.Sprintf("**User %s#%s Kicked**\n*Reason: %s*", i.Data.Options[0].UserValue(s).Username, i.Data.Options[0].UserValue(s).Discriminator, reason),
+		},
+	})
+	if err != nil {
+		logrus.Errorf("Error responding to kick %v", err)
+	}
+
+	return
 }
