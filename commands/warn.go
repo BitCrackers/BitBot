@@ -2,14 +2,13 @@ package commands
 
 import (
 	"fmt"
-
 	"github.com/bwmarrin/discordgo"
 )
 
-func (ch *CommandHandler) KickCommand() *Command {
+func (ch *CommandHandler) WarnCommand() *Command {
 	return &Command{
-		Name:        "kick",
-		Description: "Kicks a user from the server.",
+		Name:        "warn",
+		Description: "Warns a user.",
 		Options: []*discordgo.ApplicationCommandOption{
 			{
 				Name:        "user",
@@ -24,11 +23,11 @@ func (ch *CommandHandler) KickCommand() *Command {
 				Required:    false,
 			},
 		},
-		HandlerFunc: ch.handleKick,
+		HandlerFunc: ch.handleWarn,
 	}
 }
 
-func (ch *CommandHandler) handleKick(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func (ch *CommandHandler) handleWarn(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	permissions, err := s.UserChannelPermissions(i.Member.User.ID, i.ChannelID)
 	if err != nil {
 		fmt.Printf("Error getting user permissions %s", err.Error())
@@ -38,24 +37,25 @@ func (ch *CommandHandler) handleKick(s *discordgo.Session, i *discordgo.Interact
 	if len(i.Data.Options) > 1 {
 		reason = i.Data.Options[1].StringValue()
 	} else {
-		reason = fmt.Sprintf("Kicked by: %s#%s.", i.Member.User.Username, i.Member.User.Discriminator)
+		reason = ""
 	}
+
 	if permissions&discordgo.PermissionKickMembers > 0 {
 
-		err := s.GuildMemberDeleteWithReason(i.GuildID, i.Data.Options[0].UserValue(s).ID, reason)
+		err = ch.DB.WarnUser(i.Data.Options[0].UserValue(s), i.Member.User, reason)
 
 		if err != nil {
-			fmt.Printf("Error kicking user: %s", err.Error())
+			fmt.Printf("Error warning user: %s\n", err)
 		}
 
 		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionApplicationCommandResponseData{
-				Content: fmt.Sprintf("**User %s#%s Kicked**\n*Reason: %s*", i.Data.Options[0].UserValue(s).Username, i.Data.Options[0].UserValue(s).Discriminator, reason),
+				Content: fmt.Sprintf("**User %s#%s Warned**\n*Reason: %s*", i.Data.Options[0].UserValue(s).Username, i.Data.Options[0].UserValue(s).Discriminator, reason),
 			},
 		})
 		if err != nil {
-			fmt.Printf("Error responding to kick %s", err.Error())
+			fmt.Printf("Error responding to warn %s", err.Error())
 		}
 
 		return
