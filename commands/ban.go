@@ -2,9 +2,10 @@ package commands
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 func (ch *CommandHandler) BanCommand() *Command {
@@ -43,10 +44,9 @@ func (ch *CommandHandler) handleBan(s *discordgo.Session, i *discordgo.Interacti
 		return
 	}
 
-	if permissions&discordgo.PermissionBanMembers < 0 {
+	if permissions&discordgo.PermissionBanMembers <= 0 {
 		return
 	}
-
 
 	args := parseInteractionOptions(i.Data.Options)
 	reason := fmt.Sprintf("Banned by: %s#%s.", i.Member.User.Username, i.Member.User.Discriminator)
@@ -76,7 +76,6 @@ func (ch *CommandHandler) handleBan(s *discordgo.Session, i *discordgo.Interacti
 		return
 	}
 
-
 	banLength := "indefinite"
 	if banTime != -1 {
 		banLength = banTime.String()
@@ -85,11 +84,11 @@ func (ch *CommandHandler) handleBan(s *discordgo.Session, i *discordgo.Interacti
 	user := args["user"].UserValue(s)
 	err = ch.ModLog.SendEmbed(s, &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
-			Name:         fmt.Sprintf("[BAN] %s#%s", user.Username, user.Discriminator),
-			IconURL:      user.AvatarURL("256"),
+			Name:    fmt.Sprintf("[BAN] %s#%s", user.Username, user.Discriminator),
+			IconURL: user.AvatarURL("256"),
 		},
 		Timestamp: time.Now().Format(time.RFC3339),
-		Color: 16754451,
+		Color:     16754451,
 		Fields: []*discordgo.MessageEmbedField{
 			{
 				Name:   "User",

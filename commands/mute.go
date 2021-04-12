@@ -3,11 +3,12 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"github.com/bwmarrin/discordgo"
-	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/sirupsen/logrus"
 )
 
 func (ch *CommandHandler) MuteCommand() *Command {
@@ -54,7 +55,7 @@ func (ch *CommandHandler) handleMute(s *discordgo.Session, i *discordgo.Interact
 		}
 	}
 
-	if permissions&discordgo.PermissionKickMembers < 0 {
+	if permissions&discordgo.PermissionKickMembers <= 0 {
 		return
 	}
 
@@ -99,11 +100,11 @@ func (ch *CommandHandler) handleMute(s *discordgo.Session, i *discordgo.Interact
 	user := i.Data.Options[0].UserValue(s)
 	err = ch.ModLog.SendEmbed(s, &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
-			Name:         fmt.Sprintf("[MUTE] %s#%s", user.Username, user.Discriminator),
-			IconURL:      user.AvatarURL("256"),
+			Name:    fmt.Sprintf("[MUTE] %s#%s", user.Username, user.Discriminator),
+			IconURL: user.AvatarURL("256"),
 		},
 		Timestamp: time.Now().Format(time.RFC3339),
-		Color: 16753197,
+		Color:     16753197,
 		Fields: []*discordgo.MessageEmbedField{
 			{
 				Name:   "User",

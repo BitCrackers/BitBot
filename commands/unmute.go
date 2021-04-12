@@ -2,9 +2,10 @@ package commands
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 func (ch *CommandHandler) UnmuteCommand() *Command {
@@ -31,7 +32,7 @@ func (ch *CommandHandler) handleUnMute(s *discordgo.Session, i *discordgo.Intera
 		return
 	}
 
-	if permissions&discordgo.PermissionKickMembers < 0 {
+	if permissions&discordgo.PermissionKickMembers <= 0 {
 		return
 	}
 
@@ -56,12 +57,12 @@ func (ch *CommandHandler) handleUnMute(s *discordgo.Session, i *discordgo.Intera
 	user := i.Data.Options[0].UserValue(s)
 	err = ch.ModLog.SendEmbed(s, &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
-			Name:         fmt.Sprintf("[UNMUTE] %s#%s", user.Username, user.Discriminator),
-			IconURL:      user.AvatarURL("256"),
+			Name:    fmt.Sprintf("[UNMUTE] %s#%s", user.Username, user.Discriminator),
+			IconURL: user.AvatarURL("256"),
 		},
 		Description: "**Unmuted by moderator**",
-		Timestamp: time.Now().Format(time.RFC3339),
-		Color: 3574686,
+		Timestamp:   time.Now().Format(time.RFC3339),
+		Color:       3574686,
 		Fields: []*discordgo.MessageEmbedField{
 			{
 				Name:   "User",
