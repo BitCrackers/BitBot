@@ -39,7 +39,7 @@ func (ch *CommandHandler) handleKick(s *discordgo.Session, i *discordgo.Interact
 		return
 	}
 
-	if permissions&discordgo.PermissionKickMembers < 0 {
+	if permissions&discordgo.PermissionKickMembers <= 0 {
 		return
 	}
 
@@ -64,11 +64,11 @@ func (ch *CommandHandler) handleKick(s *discordgo.Session, i *discordgo.Interact
 	user := args["user"].UserValue(s)
 	err = ch.ModLog.SendEmbed(s, &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
-			Name:         fmt.Sprintf("[KICK] %s#%s", user.Username, user.Discriminator),
-			IconURL:      user.AvatarURL("256"),
+			Name:    fmt.Sprintf("[KICK] %s#%s", user.Username, user.Discriminator),
+			IconURL: user.AvatarURL("256"),
 		},
 		Timestamp: time.Now().Format(time.RFC3339),
-		Color: 16754451,
+		Color:     16754451,
 		Fields: []*discordgo.MessageEmbedField{
 			{
 				Name:   "User",
