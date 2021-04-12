@@ -32,18 +32,18 @@ In addition to the required environment variables, BitBot has a TOML based confi
 
 ## Release Candidate 1 Milestones
 
-* [ ] TOML config for extra functionality. (In progress)
-* [ ] ~~BITBOT_DEBUG environment variable~~ actually doing something
+* [x] TOML config for extra functionality. (In progress)
+* [x] ~~BITBOT_DEBUG environment variable~~ actually doing something
     * This was moved into the config but still needs work.
 * [ ] Moderation commands.
     * [x] Kicking
     * [x] Banning
-    * [ ] Muting
-    * [ ] Temp-ban and Temp-mute
-* [ ] sqlite3 database integration
-* [ ] Moderation logging in channel
-* [ ] Parsing messages for common phrases (listed in config.toml probably)
-* [ ] Possible: Pull build artifacts for menu every update and send to channel
+    * [x] Muting
+    * [x] Temp-ban and Temp-mute
+* [x] sqlite3 database integration
+* [x] Moderation logging in channel
+* [x] Parsing messages for common phrases (listed in config.toml probably)
+* [x] Possible: Pull build artifacts for menu every update and send to channel
 
 ## Contributing
 
