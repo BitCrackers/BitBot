@@ -62,3 +62,11 @@ func (cmd *Command) Delete() error {
 	cmd.removeHandlerFromSession()
 	return nil
 }
+
+func parseInteractionOptions(opts []*discordgo.ApplicationCommandInteractionDataOption) map[string]*discordgo.ApplicationCommandInteractionDataOption {
+	result := map[string]*discordgo.ApplicationCommandInteractionDataOption{}
+	for _, opt := range opts {
+		result[opt.Name] = opt
+	}
+	return result
+}

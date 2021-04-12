@@ -16,12 +16,15 @@ type Filter struct {
 	Delete   bool
 	RegExp   []string
 }
-type Config struct {
-	GuildID string
-	Debug   bool
 
-	Filters    []Filter
-	Moderators []string
+type Config struct {
+	GuildID              string
+	Debug                bool
+	MuteRoleID           string
+	ModLogChannelId      string
+	Filters              []Filter
+	Moderators           []string
+	JanitorCycleDuration int
 }
 
 func Load() (Config, error) {

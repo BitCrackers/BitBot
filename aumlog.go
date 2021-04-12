@@ -31,7 +31,7 @@ func aumLog(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	logs := strings.Split(string(b), "\n")
-	r := struct{
+	r := struct {
 		commitHash string
 		branch     string
 		buildType  string
@@ -63,7 +63,6 @@ func aumLog(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	if infoIndex == -1 {
-		// TODO: Make this into a Discord message response.
 		logrus.Errorf("Invalid log format: unable to find run info")
 		return
 	}
@@ -99,27 +98,30 @@ func aumLog(s *discordgo.Session, m *discordgo.MessageCreate) {
 			{
 				Name:   "Build type",
 				Value:  r.buildType,
-				Inline: false,
+				Inline: true,
 			},
 			{
 				Name:   "AU Version",
 				Value:  r.auVersion,
-				Inline: false,
+				Inline: true,
 			},
 			{
 				Name:   "Git branch",
 				Value:  r.branch,
-				Inline: false,
+				Inline: true,
 			},
 			{
 				Name:   "Git commit",
 				Value:  fmt.Sprintf("[%s](https://github.com/BitCrackers/AmongUsMenu/commit/%s)", r.commitHash[:7], r.commitHash),
-				Inline: false,
+				Inline: true,
 			},
 		},
 	}
 
-	_, err = s.ChannelMessageSendEmbed(m.ChannelID, &embed)
+	_, err = s.ChannelMessageSendComplex(m.ChannelID, &discordgo.MessageSend{
+		Embed:     &embed,
+		Reference: m.Reference(),
+	})
 	if err != nil {
 		logrus.Errorf("Error trying to send embed %v", err)
 		return
