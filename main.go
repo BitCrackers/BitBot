@@ -4,6 +4,8 @@ import (
 	"github.com/BitCrackers/BitBot/commands"
 	"github.com/BitCrackers/BitBot/config"
 	"github.com/BitCrackers/BitBot/database"
+	"github.com/BitCrackers/BitBot/modlog"
+	"github.com/BitCrackers/BitBot/responses"
 	"github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
@@ -11,8 +13,6 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 )
-
-
 
 func main() {
 	// Check for required environment variables.
@@ -38,7 +38,12 @@ func main() {
 		logrus.Fatalf("Error while creating session: %v", err)
 	}
 
-	db, err := database.New(session, &cfg)
+	modlog, err := modlog.Create(&cfg, session)
+	if err != nil {
+		logrus.Fatalf("Unable to create modlog: %v", err)
+	}
+
+	db, err := database.New(session, &cfg, &modlog)
 	if err != nil {
 		logrus.Fatalf("Unable to start database: %v", err)
 	}
@@ -47,14 +52,18 @@ func main() {
 	cmdHandler := commands.CommandHandler{
 		DB:     db,
 		Config: &cfg,
+		ModLog: &modlog,
 	}
 
 	// Setup session intents here. GuildMembers is needed for moderation slash commands.
 	session.Identify.Intents = discordgo.IntentsAll
 
+	// Create custom response handler for filters
+	rh := responses.New()
+
 	// Register handlers for filters.
 	for _, filter := range cfg.Filters {
-		handler, err := newFilterHandler(filter)
+		handler, err := newFilterHandler(filter, &rh)
 		if err != nil {
 			logrus.Errorf("Error while creating filter: %v", err)
 		}

@@ -18,11 +18,12 @@ type Filter struct {
 }
 
 type Config struct {
-	GuildID    string
-	Debug      bool
-	MuteRoleID string
-	Filters    []Filter
-	Moderators []string
+	GuildID              string
+	Debug                bool
+	MuteRoleID           string
+	ModLogChannelId      string
+	Filters              []Filter
+	Moderators           []string
 	JanitorCycleDuration int
 }
 

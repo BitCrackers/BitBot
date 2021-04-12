@@ -31,7 +31,7 @@ func aumLog(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	logs := strings.Split(string(b), "\n")
-	r := struct{
+	r := struct {
 		commitHash string
 		branch     string
 		buildType  string
@@ -119,7 +119,7 @@ func aumLog(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	_, err = s.ChannelMessageSendComplex(m.ChannelID, &discordgo.MessageSend{
-		Embed: &embed,
+		Embed:     &embed,
 		Reference: m.Reference(),
 	})
 	if err != nil {

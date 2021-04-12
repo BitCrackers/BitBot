@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/BitCrackers/BitBot/config"
 	"github.com/BitCrackers/BitBot/database"
+	"github.com/BitCrackers/BitBot/modlog"
 	"github.com/bwmarrin/discordgo"
 	"github.com/sirupsen/logrus"
 )
@@ -12,6 +13,7 @@ import (
 type CommandHandler struct {
 	DB     *database.Database
 	Config *config.Config
+	ModLog *modlog.ModLogHandler
 }
 
 // Commands returns all commands of the CommandHandler. This should be updated
@@ -32,6 +34,15 @@ func (ch *CommandHandler) Commands() []*Command {
 		)
 	}
 	return cmds
+}
+
+func (ch *CommandHandler) userIsModerator(id string) bool {
+	for _, moderator := range ch.Config.Moderators {
+		if moderator == id {
+			return true
+		}
+	}
+	return false
 }
 
 func RespondWithError(s *discordgo.Session, i *discordgo.InteractionCreate, reason string) {

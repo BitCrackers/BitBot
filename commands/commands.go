@@ -70,4 +70,3 @@ func parseInteractionOptions(opts []*discordgo.ApplicationCommandInteractionData
 	}
 	return result
 }
-

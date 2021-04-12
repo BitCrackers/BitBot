@@ -2,9 +2,9 @@ package commands
 
 import (
 	"fmt"
-	"github.com/BitCrackers/BitBot/database"
 	"github.com/bwmarrin/discordgo"
 	"github.com/sirupsen/logrus"
+	"time"
 )
 
 func (ch *CommandHandler) UnmuteCommand() *Command {
@@ -41,32 +41,48 @@ func (ch *CommandHandler) handleUnMute(s *discordgo.Session, i *discordgo.Intera
 		RespondWithError(s, i, "Couldn't fetch user record")
 		return
 	}
+
 	if u.Mute.Empty() {
 		RespondWithError(s, i, "User is not muted")
 		return
 	}
 
-	u.Mute = database.Punishment{
-		Type: -1,
-	}
-	err = ch.DB.SetUserRecord(u)
-	if err != nil {
+	if err = ch.DB.UnmuteRecord(u, false); err != nil {
 		logrus.Errorf("Error unmuting user: %s\n", err)
 		RespondWithError(s, i, "Couldn't remove mute from database")
 		return
 	}
 
-	err = s.GuildMemberRoleRemove(i.GuildID, i.Data.Options[0].UserValue(s).ID, ch.Config.MuteRoleID)
+	user := i.Data.Options[0].UserValue(s)
+	err = ch.ModLog.SendEmbed(s, &discordgo.MessageEmbed{
+		Author: &discordgo.MessageEmbedAuthor{
+			Name:         fmt.Sprintf("[UNMUTE] %s#%s", user.Username, user.Discriminator),
+			IconURL:      user.AvatarURL("256"),
+		},
+		Description: "**Unmuted by moderator**",
+		Timestamp: time.Now().Format(time.RFC3339),
+		Color: 3574686,
+		Fields: []*discordgo.MessageEmbedField{
+			{
+				Name:   "User",
+				Value:  fmt.Sprintf("<@%s>", user.ID),
+				Inline: true,
+			},
+			{
+				Name:   "Moderator",
+				Value:  fmt.Sprintf("<@%s>", i.Member.User.ID),
+				Inline: true,
+			},
+		},
+	})
 	if err != nil {
-		logrus.Errorf("Error removing muted role from user: %s\n", err)
-		RespondWithError(s, i, "Could not remove muted role from user")
-		return
+		logrus.Errorf("Error logging unmute: %v", err)
 	}
 
 	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionApplicationCommandResponseData{
-			Content: fmt.Sprintf("**User %s#%s Unmuted", i.Data.Options[0].UserValue(s).Username, i.Data.Options[0].UserValue(s).Discriminator),
+			Content: fmt.Sprintf("**User %s#%s Unmuted**", i.Data.Options[0].UserValue(s).Username, i.Data.Options[0].UserValue(s).Discriminator),
 		},
 	})
 	if err != nil {

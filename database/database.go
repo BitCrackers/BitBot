@@ -9,17 +9,20 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/BitCrackers/BitBot/modlog"
+
 	"github.com/BitCrackers/BitBot/config"
 	"github.com/bwmarrin/discordgo"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 type Database struct {
-	underlying *sql.DB
-	session    *discordgo.Session
-	config     *config.Config
+	underlying   *sql.DB
+	session      *discordgo.Session
+	config       *config.Config
+	modlog       *modlog.ModLogHandler
 	closeJanitor chan struct{}
-	closed bool
+	closed       bool
 }
 
 const (
@@ -48,7 +51,7 @@ type UserRecord struct {
 	Mute     Punishment
 }
 
-func New(session *discordgo.Session, config *config.Config) (*Database, error) {
+func New(session *discordgo.Session, config *config.Config, modlog *modlog.ModLogHandler) (*Database, error) {
 	ex, err := os.Executable()
 	if err != nil {
 		return nil, fmt.Errorf("error while getting executable directory: %v", err)
@@ -83,6 +86,7 @@ func New(session *discordgo.Session, config *config.Config) (*Database, error) {
 		underlying: underlying,
 		session:    session,
 		config:     config,
+		modlog:     modlog,
 	}
 	db.closeJanitor = db.startJanitor()
 	return db, nil
@@ -132,9 +136,7 @@ func (d *Database) MuteUser(id string, moderatorID string, reason string, length
 }
 
 func (d *Database) BanUser(id string, moderatorID string, reason string, length time.Duration) error {
-
-	err := d.session.GuildBanCreateWithReason(d.config.GuildID, id, reason, 0)
-	if err != nil {
+	if err := d.session.GuildBanCreateWithReason(d.config.GuildID, id, reason, 0); err != nil {
 		return fmt.Errorf("error while banning user from guild: %v", err)
 	}
 	return d.PunishUser(id, Punishment{
@@ -159,8 +161,7 @@ func (d *Database) PunishUser(id string, punishment Punishment) error {
 		userRecord.Mute = punishment
 	}
 
-	err = d.SetUserRecord(userRecord)
-	if err != nil {
+	if err = d.SetUserRecord(userRecord); err != nil {
 		return err
 	}
 	return nil
@@ -205,8 +206,7 @@ func (d *Database) UserRecord(id string) (UserRecord, error) {
 		Mute:     Punishment{},
 	}
 
-	err = row.Scan(&idNString, &warningsNString, &muteNString, &banNString)
-	if err != nil {
+	if err = row.Scan(&idNString, &warningsNString, &muteNString, &banNString); err != nil {
 		return UserRecord{}, err
 	}
 	userRecord.ID = idNString.String
@@ -216,8 +216,7 @@ func (d *Database) UserRecord(id string) (UserRecord, error) {
 		warningsString = warningsNString.String
 	}
 	if warningsString != "" {
-		err = json.Unmarshal([]byte(warningsString), &userRecord.Warnings)
-		if err != nil {
+		if err = json.Unmarshal([]byte(warningsString), &userRecord.Warnings); err != nil {
 			return UserRecord{}, err
 		}
 	}
@@ -230,8 +229,7 @@ func (d *Database) UserRecord(id string) (UserRecord, error) {
 		Type: -1,
 	}
 	if muteString != "" {
-		err = json.Unmarshal([]byte(muteString), &mute)
-		if err != nil {
+		if err = json.Unmarshal([]byte(muteString), &mute); err != nil {
 			return UserRecord{}, err
 		}
 	}
@@ -245,8 +243,7 @@ func (d *Database) UserRecord(id string) (UserRecord, error) {
 		Type: -1,
 	}
 	if banString != "" {
-		err = json.Unmarshal([]byte(banString), &ban)
-		if err != nil {
+		if err = json.Unmarshal([]byte(banString), &ban); err != nil {
 			return UserRecord{}, err
 		}
 	}
@@ -276,8 +273,7 @@ func (d *Database) AllUserRecords() ([]UserRecord, error) {
 			Mute:     Punishment{},
 		}
 
-		err = rows.Scan(&idNString, &warningsNString, &muteNString, &banNString)
-		if err != nil {
+		if err = rows.Scan(&idNString, &warningsNString, &muteNString, &banNString); err != nil {
 			return nil, err
 		}
 		userRecord.ID = idNString.String
@@ -287,8 +283,7 @@ func (d *Database) AllUserRecords() ([]UserRecord, error) {
 			warningsString = warningsNString.String
 		}
 		if warningsString != "" {
-			err = json.Unmarshal([]byte(warningsString), &userRecord.Warnings)
-			if err != nil {
+			if err = json.Unmarshal([]byte(warningsString), &userRecord.Warnings); err != nil {
 				return nil, err
 			}
 		}
@@ -301,8 +296,7 @@ func (d *Database) AllUserRecords() ([]UserRecord, error) {
 			Type: -1,
 		}
 		if muteString != "" {
-			err = json.Unmarshal([]byte(muteString), &mute)
-			if err != nil {
+			if err = json.Unmarshal([]byte(muteString), &mute); err != nil {
 				return nil, err
 			}
 		}
@@ -316,8 +310,7 @@ func (d *Database) AllUserRecords() ([]UserRecord, error) {
 			Type: -1,
 		}
 		if banString != "" {
-			err = json.Unmarshal([]byte(banString), &ban)
-			if err != nil {
+			if err = json.Unmarshal([]byte(banString), &ban); err != nil {
 				return nil, err
 			}
 		}
@@ -335,8 +328,7 @@ func (d *Database) SetUserRecord(record UserRecord) error {
 	}
 
 	if !e {
-		err = d.CreateUserRecord(record.ID)
-		if err != nil {
+		if err = d.CreateUserRecord(record.ID); err != nil {
 			return err
 		}
 	}

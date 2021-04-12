@@ -60,6 +60,11 @@ func (ch *CommandHandler) handleMute(s *discordgo.Session, i *discordgo.Interact
 
 	args := parseInteractionOptions(i.Data.Options)
 
+	if ch.userIsModerator(args["user"].UserValue(s).ID) {
+		RespondWithError(s, i, "cannot mute a moderator")
+		return
+	}
+
 	reason := "unknown"
 	if args["reason"] != nil && args["reason"].StringValue() != "" {
 		reason = args["reason"].StringValue()
@@ -80,8 +85,7 @@ func (ch *CommandHandler) handleMute(s *discordgo.Session, i *discordgo.Interact
 		}
 	}
 
-	err = ch.DB.MuteUser(args["user"].UserValue(s).ID, i.Member.User.ID, reason, duration)
-	if err != nil {
+	if err = ch.DB.MuteUser(args["user"].UserValue(s).ID, i.Member.User.ID, reason, duration); err != nil {
 		logrus.Errorf("Error while muting user: %v", err)
 		RespondWithError(s, i, fmt.Sprintf("Error while muting user: %v", err))
 		return
@@ -90,6 +94,41 @@ func (ch *CommandHandler) handleMute(s *discordgo.Session, i *discordgo.Interact
 	durationFmt := "indefinite"
 	if duration != -1 {
 		durationFmt = duration.String()
+	}
+
+	user := i.Data.Options[0].UserValue(s)
+	err = ch.ModLog.SendEmbed(s, &discordgo.MessageEmbed{
+		Author: &discordgo.MessageEmbedAuthor{
+			Name:         fmt.Sprintf("[MUTE] %s#%s", user.Username, user.Discriminator),
+			IconURL:      user.AvatarURL("256"),
+		},
+		Timestamp: time.Now().Format(time.RFC3339),
+		Color: 16753197,
+		Fields: []*discordgo.MessageEmbedField{
+			{
+				Name:   "User",
+				Value:  fmt.Sprintf("<@%s>", user.ID),
+				Inline: true,
+			},
+			{
+				Name:   "Moderator",
+				Value:  fmt.Sprintf("<@%s>", i.Member.User.ID),
+				Inline: true,
+			},
+			{
+				Name:   "Reason",
+				Value:  reason,
+				Inline: true,
+			},
+			{
+				Name:   "Duration",
+				Value:  duration.String(),
+				Inline: true,
+			},
+		},
+	})
+	if err != nil {
+		logrus.Errorf("Error logging mute: %v", err)
 	}
 
 	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{

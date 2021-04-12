@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"github.com/bwmarrin/discordgo"
 	"github.com/sirupsen/logrus"
 	"time"
 )
@@ -47,7 +48,7 @@ func (d *Database) startJanitor() chan struct{} {
 					record.Mute.Length != -1 &&
 					record.Mute.Date.Add(record.Mute.Length).Before(time.Now()) {
 					logrus.Debugf("Janitor removing expired mute")
-					if err = d.UnmuteRecord(record); err != nil {
+					if err = d.UnmuteRecord(record, true); err != nil {
 						logrus.Errorf("%v", err)
 					}
 				}
@@ -56,7 +57,7 @@ func (d *Database) startJanitor() chan struct{} {
 					record.Ban.Length != -1 &&
 					record.Ban.Date.Add(record.Ban.Length).Before(time.Now()) {
 					logrus.Debugf("Janitor removing expired ban")
-					if err = d.UnbanRecord(record); err != nil {
+					if err = d.UnbanRecord(record, true); err != nil {
 						logrus.Errorf("%v", err)
 					}
 				}
@@ -66,7 +67,7 @@ func (d *Database) startJanitor() chan struct{} {
 	return c
 }
 
-func (d *Database) UnbanRecord(ur UserRecord) error {
+func (d *Database) UnbanRecord(ur UserRecord, log bool) error {
 	if err := d.session.GuildBanDelete(d.config.GuildID, ur.ID); err != nil {
 		return fmt.Errorf("error while removing user ban: %v", err)
 	}
@@ -74,10 +75,45 @@ func (d *Database) UnbanRecord(ur UserRecord) error {
 	if err := d.SetUserRecord(ur); err != nil {
 		logrus.Errorf("error while deleting user record from database: %v", err)
 	}
+
+	if !log {
+		return nil
+	}
+
+	user, err := d.session.User(ur.ID)
+	if err != nil {
+		return fmt.Errorf("error while getting discordgo user from id: %v", err)
+	}
+
+	err = d.modlog.SendEmbed(d.session, &discordgo.MessageEmbed{
+		Author: &discordgo.MessageEmbedAuthor{
+			Name:         fmt.Sprintf("[UNMUTE] %s#%s", user.Username, user.Discriminator),
+			IconURL:      user.AvatarURL("256"),
+		},
+		Description: "**Unbanned because ban expired**",
+		Timestamp: time.Now().Format(time.RFC3339),
+		Color: 3574686,
+		Fields: []*discordgo.MessageEmbedField{
+			{
+				Name:   "User",
+				Value:  fmt.Sprintf("<@%s>", user.ID),
+				Inline: true,
+			},
+			{
+				Name:   "Moderator",
+				Value:  "**BitBot Janitor**",
+				Inline: true,
+			},
+		},
+	})
+	if err != nil {
+		logrus.Errorf("Error logging unban: %v", err)
+	}
+
 	return nil
 }
 
-func (d *Database) UnmuteRecord(ur UserRecord) error {
+func (d *Database) UnmuteRecord(ur UserRecord, log bool) error {
 	err := d.session.GuildMemberRoleRemove(d.config.GuildID, ur.ID, d.config.MuteRoleID)
 	if err != nil {
 		return fmt.Errorf("error while removing user role: %v", err)
@@ -86,5 +122,40 @@ func (d *Database) UnmuteRecord(ur UserRecord) error {
 	if err = d.SetUserRecord(ur); err != nil {
 		return fmt.Errorf("error while deleting user record from database: %v", err)
 	}
+
+	if !log {
+		return nil
+	}
+
+	user, err := d.session.User(ur.ID)
+	if err != nil {
+		return fmt.Errorf("error while getting discordgo user from id: %v", err)
+	}
+
+	err = d.modlog.SendEmbed(d.session, &discordgo.MessageEmbed{
+		Author: &discordgo.MessageEmbedAuthor{
+			Name:         fmt.Sprintf("[UNMUTE] %s#%s", user.Username, user.Discriminator),
+			IconURL:      user.AvatarURL("256"),
+		},
+		Description: "**Unmuted because mute expired**",
+		Timestamp: time.Now().Format(time.RFC3339),
+		Color: 3574686,
+		Fields: []*discordgo.MessageEmbedField{
+			{
+				Name:   "User",
+				Value:  fmt.Sprintf("<@%s>", user.ID),
+				Inline: true,
+			},
+			{
+				Name:   "Moderator",
+				Value:  "**BitBot Janitor**",
+				Inline: true,
+			},
+		},
+	})
+	if err != nil {
+		logrus.Errorf("Error logging unmute: %v", err)
+	}
+
 	return nil
 }

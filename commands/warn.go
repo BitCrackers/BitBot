@@ -40,16 +40,19 @@ func (ch *CommandHandler) handleWarn(s *discordgo.Session, i *discordgo.Interact
 		return
 	}
 
-	var reason string
-	if len(i.Data.Options) > 1 {
-		reason = i.Data.Options[1].StringValue()
-	} else {
-		reason = "unknown"
+	args := parseInteractionOptions(i.Data.Options)
+
+	if ch.userIsModerator(args["user"].UserValue(s).ID) {
+		RespondWithError(s, i, "cannot warn a moderator")
+		return
 	}
 
-	err = ch.DB.WarnUser(i.Data.Options[0].UserValue(s).ID, i.Member.User.ID, reason)
+	reason := "unknown"
+	if args["reason"] != nil && args["reason"].StringValue() != "" {
+		reason = args["reason"].StringValue()
+	}
 
-	if err != nil {
+	if err = ch.DB.WarnUser(i.Data.Options[0].UserValue(s).ID, i.Member.User.ID, reason); err != nil {
 		fmt.Printf("Error warning user: %s\n", err)
 		RespondWithError(s, i, "Error warning user")
 		return

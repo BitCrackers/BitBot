@@ -9,9 +9,9 @@ import (
 
 func (ch *CommandHandler) BuildsCommand() *Command {
 	return &Command{
-		Name:                     "builds",
+		Name:        "builds",
 		Description: "Gets the latest AmongUsMenu builds",
-		Options: []*discordgo.ApplicationCommandOption{},
+		Options:     []*discordgo.ApplicationCommandOption{},
 		HandlerFunc: ch.handleBuilds,
 	}
 }
