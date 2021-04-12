@@ -20,9 +20,10 @@ type Filter struct {
 type Config struct {
 	GuildID    string
 	Debug      bool
-	MuteRoleId string
+	MuteRoleID string
 	Filters    []Filter
 	Moderators []string
+	JanitorCycleDuration int
 }
 
 func Load() (Config, error) {

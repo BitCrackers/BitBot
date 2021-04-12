@@ -29,16 +29,20 @@ func main() {
 		panic("you were just saved from waiting 2 hours for discord to register slash commands globally")
 	}
 
-	db, err := database.New()
-	if err != nil {
-		logrus.Fatalf("Unable to start database: %v", err)
+	if cfg.Debug {
+		logrus.SetLevel(logrus.DebugLevel)
 	}
-	defer db.Close()
 
 	session, err := discordgo.New("Bot " + token)
 	if err != nil {
 		logrus.Fatalf("Error while creating session: %v", err)
 	}
+
+	db, err := database.New(session, &cfg)
+	if err != nil {
+		logrus.Fatalf("Unable to start database: %v", err)
+	}
+	defer db.Close()
 
 	cmdHandler := commands.CommandHandler{
 		DB:     db,

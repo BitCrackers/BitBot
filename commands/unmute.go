@@ -35,7 +35,7 @@ func (ch *CommandHandler) handleUnMute(s *discordgo.Session, i *discordgo.Intera
 		return
 	}
 
-	u, err := ch.DB.GetUserRecord(i.Data.Options[0].UserValue(s))
+	u, err := ch.DB.UserRecord(i.Data.Options[0].UserValue(s).ID)
 	if err != nil {
 		logrus.Errorf("Error fetching user record: %s", err)
 		RespondWithError(s, i, "Couldn't fetch user record")
@@ -56,7 +56,7 @@ func (ch *CommandHandler) handleUnMute(s *discordgo.Session, i *discordgo.Intera
 		return
 	}
 
-	err = s.GuildMemberRoleRemove(i.GuildID, i.Data.Options[0].UserValue(s).ID, ch.Config.MuteRoleId)
+	err = s.GuildMemberRoleRemove(i.GuildID, i.Data.Options[0].UserValue(s).ID, ch.Config.MuteRoleID)
 	if err != nil {
 		logrus.Errorf("Error removing muted role from user: %s\n", err)
 		RespondWithError(s, i, "Could not remove muted role from user")

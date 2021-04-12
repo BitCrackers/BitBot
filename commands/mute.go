@@ -28,7 +28,7 @@ func (ch *CommandHandler) MuteCommand() *Command {
 				Required:    false,
 			},
 			{
-				Name:        "length",
+				Name:        "duration",
 				Description: "The amount of time the mute should last.",
 				Type:        discordgo.ApplicationCommandOptionString,
 				Required:    false,
@@ -58,107 +58,81 @@ func (ch *CommandHandler) handleMute(s *discordgo.Session, i *discordgo.Interact
 		return
 	}
 
+	args := parseInteractionOptions(i.Data.Options)
+
 	reason := "unknown"
-	timeString := ""
-	if len(i.Data.Options) == 2 {
-		if i.Data.Options[1].Name == "reason" {
-			reason = i.Data.Options[1].StringValue()
-		} else {
-			timeString = i.Data.Options[1].StringValue()
-		}
-	}
-	if len(i.Data.Options) == 3 {
-		reason = i.Data.Options[1].StringValue()
-		timeString = i.Data.Options[2].StringValue()
+	if args["reason"] != nil && args["reason"].StringValue() != "" {
+		reason = args["reason"].StringValue()
 	}
 
-	muteTime := -1
-	if timeString != "" {
-		muteTime, err = timeStringToSeconds(timeString)
+	durationString := ""
+	if args["duration"] != nil && args["duration"].StringValue() != "" {
+		durationString = args["duration"].StringValue()
+	}
+
+	duration := time.Duration(-1)
+	if durationString != "" {
+		duration, err = timeStringToDuration(durationString)
 		if err != nil {
-			logrus.Errorf("%s: invalid time formatting", timeString)
-			RespondWithError(s, i, fmt.Sprintf("%s: invalid time formatting", timeString))
+			logrus.Errorf("%s: invalid time formatting", durationString)
+			RespondWithError(s, i, fmt.Sprintf("%s: invalid time formatting", durationString))
 			return
 		}
 	}
-	u, err := ch.DB.GetUserRecord(i.Data.Options[0].UserValue(s))
+
+	err = ch.DB.MuteUser(args["user"].UserValue(s).ID, i.Member.User.ID, reason, duration)
 	if err != nil {
-		logrus.Errorf("Error fetching user record: %s\n", err)
-		RespondWithError(s, i, "Could fetch user record")
+		logrus.Errorf("Error while muting user: %v", err)
+		RespondWithError(s, i, fmt.Sprintf("Error while muting user: %v", err))
 		return
 	}
 
-	if !u.Mute.Empty() {
-		muteExpire := "never"
-		if u.Mute.Length != -1 {
-			muteExpire = u.Mute.Date.Add(time.Duration(u.Mute.Length) * time.Second).Sub(time.Now()).String()
-		}
-		logrus.Errorf("User is already muted\n*Mute expires:%s*", muteExpire)
-		RespondWithError(s, i, fmt.Sprintf("User is already muted\n*Mute expires: %s*", muteExpire))
-		return
-	}
-
-	err = ch.DB.MuteUser(i.Data.Options[0].UserValue(s), i.Member.User, reason, muteTime)
-	if err != nil {
-		logrus.Errorf("Error warning user: %s\n", err)
-		RespondWithError(s, i, "Could not add muted user to database")
-		return
-	}
-
-	err = s.GuildMemberRoleAdd(i.GuildID, i.Data.Options[0].UserValue(s).ID, ch.Config.MuteRoleId)
-	if err != nil {
-		logrus.Errorf("Error giving user muted role: %s\n", err)
-		RespondWithError(s, i, "Could not add muted role to user")
-		return
-	}
-
-	muteLength := "indefinite"
-	if muteTime != -1 {
-		muteLength = (time.Duration(muteTime) * time.Second).String()
+	durationFmt := "indefinite"
+	if duration != -1 {
+		durationFmt = duration.String()
 	}
 
 	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionApplicationCommandResponseData{
-			Content: fmt.Sprintf("**User %s#%s Muted**\n*Reason: %s*\n*Length: %s*", i.Data.Options[0].UserValue(s).Username, i.Data.Options[0].UserValue(s).Discriminator, reason, muteLength),
+			Content: fmt.Sprintf(
+				"**User %s#%s Muted**\n*Reason: %s*\n*Length: %s*",
+				i.Data.Options[0].UserValue(s).Username,
+				i.Data.Options[0].UserValue(s).Discriminator,
+				reason,
+				durationFmt,
+			),
 		},
 	})
 	if err != nil {
 		logrus.Errorf("Error responding to mute %v", err)
 	}
-
-	return
 }
 
-func timeStringToSeconds(t string) (int, error) {
+func timeStringToDuration(t string) (time.Duration, error) {
 	timeID := t[len(t)-1:]
-	multi := 1
+	var multi time.Duration
 	switch timeID {
 	case "s":
-		break
+		multi = time.Second
 	case "m":
-		multi = 60
-		break
+		multi = time.Minute
 	case "h":
-		multi = 3600
-		break
+		multi = time.Hour
 	case "d":
-		multi = 86400
-		break
+		multi = time.Hour * 24
 	case "w":
-		multi = 604800
-		break
+		multi = time.Hour * 24 * 7
 	case "y":
-		multi = 31622400
-		break
+		multi = time.Hour * 24 * 365
 	default:
 		return -1, errors.New("invalid time multiplier")
 	}
 	timeString := strings.TrimRight(t, timeID)
-	time, err := strconv.Atoi(timeString)
+	duration, err := strconv.Atoi(timeString)
 	if err != nil {
 		return -1, err
 	}
 
-	return time * multi, nil
+	return time.Duration(duration) * multi, nil
 }

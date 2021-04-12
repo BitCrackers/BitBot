@@ -25,8 +25,8 @@ func (ch *CommandHandler) BanCommand() *Command {
 				Required:    false,
 			},
 			{
-				Name:        "length",
-				Description: "The length of the ban.",
+				Name:        "duration",
+				Description: "The duration of the ban.",
 				Type:        discordgo.ApplicationCommandOptionString,
 				Required:    false,
 			},
@@ -46,31 +46,24 @@ func (ch *CommandHandler) handleBan(s *discordgo.Session, i *discordgo.Interacti
 		return
 	}
 
+	args := parseInteractionOptions(i.Data.Options)
 	reason := fmt.Sprintf("Banned by: %s#%s.", i.Member.User.Username, i.Member.User.Discriminator)
-	timeString := ""
-	if len(i.Data.Options) == 2 {
-		if i.Data.Options[1].Name == "reason" {
-			reason = i.Data.Options[1].StringValue()
-		} else {
-			timeString = i.Data.Options[1].StringValue()
-		}
-	}
-	if len(i.Data.Options) == 3 {
-		reason = i.Data.Options[1].StringValue()
-		timeString = i.Data.Options[2].StringValue()
+
+	if args["reason"] != nil && args["reason"].StringValue() != "" {
+		reason = args["reason"].StringValue()
 	}
 
-	banTime := -1
-	if timeString != "" {
-		banTime, err = timeStringToSeconds(timeString)
+	banTime := time.Duration(-1)
+	if args["duration"] != nil && args["duration"].StringValue() != "" {
+		banTime, err = timeStringToDuration(args["duration"].StringValue())
 		if err != nil {
-			logrus.Errorf("%s: invalid time formatting", timeString)
-			RespondWithError(s, i, fmt.Sprintf("%s: invalid time formatting", timeString))
+			logrus.Errorf("%s: invalid time formatting", args["duration"].StringValue())
+			RespondWithError(s, i, fmt.Sprintf("%s: invalid time formatting", args["duration"].StringValue()))
 			return
 		}
 	}
 
-	err = ch.DB.BanUser(i.Data.Options[0].UserValue(s), i.Member.User, reason, banTime)
+	err = ch.DB.BanUser(i.Data.Options[0].UserValue(s).ID, i.Member.User.ID, reason, banTime)
 	if err != nil {
 		logrus.Errorf("Error banning user: %v", err)
 		RespondWithError(s, i, "Error adding user ban to database")
@@ -87,7 +80,7 @@ func (ch *CommandHandler) handleBan(s *discordgo.Session, i *discordgo.Interacti
 
 	banLength := "indefinite"
 	if banTime != -1 {
-		banLength = (time.Duration(banTime) * time.Second).String()
+		banLength = banTime.String()
 	}
 
 	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{

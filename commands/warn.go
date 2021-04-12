@@ -47,7 +47,7 @@ func (ch *CommandHandler) handleWarn(s *discordgo.Session, i *discordgo.Interact
 		reason = "unknown"
 	}
 
-	err = ch.DB.WarnUser(i.Data.Options[0].UserValue(s), i.Member.User, reason)
+	err = ch.DB.WarnUser(i.Data.Options[0].UserValue(s).ID, i.Member.User.ID, reason)
 
 	if err != nil {
 		fmt.Printf("Error warning user: %s\n", err)
