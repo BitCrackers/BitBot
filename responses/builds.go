@@ -15,7 +15,7 @@ var BuildResponse = Response{
 			return fmt.Errorf("error while getting artifacts: %v", err)
 		}
 
-		runs, err := github.WorkflowRuns("BitCrackers", "AmongUsMenu")
+		run, err := github.GetLatestMasterWorkflowRun("BitCrackers", "AmongUsMenu")
 		if err != nil {
 			return fmt.Errorf("error while getting workflow runs: %v", err)
 
@@ -23,10 +23,6 @@ var BuildResponse = Response{
 
 		if len(artifacts) < 4 {
 			return fmt.Errorf("unexpected amount of artifacts: %v", len(artifacts))
-		}
-
-		if len(runs) < 1 {
-			return fmt.Errorf("incorrect amount of workflow runs")
 		}
 
 		embed := discordgo.MessageEmbed{
@@ -37,7 +33,7 @@ var BuildResponse = Response{
 					Name: "Version Proxy",
 					Value: fmt.Sprintf(
 						"[[download]](https://github.com/BitCrackers/AmongUsMenu/suites/%v/artifacts/%v)",
-						runs[0].CheckSuiteID,
+						run.CheckSuiteID,
 						artifacts[0].ID,
 					),
 					Inline: true,
@@ -46,7 +42,7 @@ var BuildResponse = Response{
 					Name: "Injectable",
 					Value: fmt.Sprintf(
 						"[[download]](https://github.com/BitCrackers/AmongUsMenu/suites/%v/artifacts/%v)",
-						runs[0].CheckSuiteID,
+						run.CheckSuiteID,
 						artifacts[1].ID,
 					),
 					Inline: true,
@@ -54,7 +50,7 @@ var BuildResponse = Response{
 			},
 		}
 
-		if !reply {
+		if reply {
 			_, err = s.ChannelMessageSendComplex(m.ChannelID, &discordgo.MessageSend{
 				Embed:     &embed,
 				Reference: m.Reference(),
