@@ -23,7 +23,7 @@ func (ch *CommandHandler) handleBuilds(s *discordgo.Session, i *discordgo.Intera
 		return
 	}
 
-	runs, err := github.WorkflowRuns("BitCrackers", "AmongUsMenu")
+	run, err := github.GetLatestMasterWorkflowRun("BitCrackers", "AmongUsMenu")
 	if err != nil {
 		logrus.Errorf("error while getting workflow runs: %v", err)
 		return
@@ -34,10 +34,6 @@ func (ch *CommandHandler) handleBuilds(s *discordgo.Session, i *discordgo.Intera
 		return
 	}
 
-	if len(runs) < 1 {
-		logrus.Errorf("incorrect amount of workflow runs")
-		return
-	}
 	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionApplicationCommandResponseData{
@@ -50,7 +46,7 @@ func (ch *CommandHandler) handleBuilds(s *discordgo.Session, i *discordgo.Intera
 							Name: "Version Proxy",
 							Value: fmt.Sprintf(
 								"[[download]](https://github.com/BitCrackers/AmongUsMenu/suites/%v/artifacts/%v)",
-								runs[0].CheckSuiteID,
+								run.CheckSuiteID,
 								artifacts[0].ID,
 							),
 							Inline: true,
@@ -59,7 +55,7 @@ func (ch *CommandHandler) handleBuilds(s *discordgo.Session, i *discordgo.Intera
 							Name: "Injectable",
 							Value: fmt.Sprintf(
 								"[[download]](https://github.com/BitCrackers/AmongUsMenu/suites/%v/artifacts/%v)",
-								runs[0].CheckSuiteID,
+								run.CheckSuiteID,
 								artifacts[1].ID,
 							),
 							Inline: true,
