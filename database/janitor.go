@@ -22,12 +22,33 @@ func (d *Database) startJanitor() chan struct{} {
 			records, err := d.AllUserRecords()
 			if err != nil {
 				logrus.Errorf("janitor error while getting all user records: %v", err)
+				return
 			}
+
+			guild, err := d.session.Guild(d.config.GuildID)
+			if err != nil {
+				logrus.Errorf("janitor error while getting all guild: %v", err)
+				return
+			}
+
 			for _, record := range records {
+				inGuild := false
+				for _, member := range guild.Members {
+					if member.User.ID != record.ID {
+						continue
+					}
+					inGuild = true
+					break
+				}
+				if !inGuild {
+					continue
+				}
+
 				if !record.Mute.Empty() {
 					member, err := d.session.GuildMember(d.config.GuildID, record.ID)
 					if err != nil {
 						logrus.Errorf("Janitor error while getting guild member roles: %v", err)
+						continue
 					}
 					var hasMuteRole bool
 					for _, role := range member.Roles {
@@ -71,6 +92,7 @@ func (d *Database) UnbanRecord(ur UserRecord, log bool) error {
 	if err := d.session.GuildBanDelete(d.config.GuildID, ur.ID); err != nil {
 		return fmt.Errorf("error while removing user ban: %v", err)
 	}
+	
 	ur.Ban = Punishment{Type: -1}
 	if err := d.SetUserRecord(ur); err != nil {
 		logrus.Errorf("error while deleting user record from database: %v", err)
