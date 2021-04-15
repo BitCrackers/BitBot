@@ -19,6 +19,7 @@ func newFilterHandler(c *config.Config, f config.Filter, rh *responses.CustomRes
 			return nil, fmt.Errorf("error while parsing regular expression \"%v\": %v", expString, err)
 		}
 		exps = append(exps, exp)
+		logrus.Infof("Loaded Filter: %v", expString)
 	}
 	if len(exps) == 0 {
 		return nil, fmt.Errorf("filter has no (valid) regular expressions")
