@@ -1,15 +1,16 @@
 package main
 
 import (
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/BitCrackers/BitBot/commands"
 	"github.com/BitCrackers/BitBot/config"
 	"github.com/BitCrackers/BitBot/database"
 	"github.com/BitCrackers/BitBot/modlog"
 	"github.com/BitCrackers/BitBot/responses"
 	"github.com/sirupsen/logrus"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -63,7 +64,7 @@ func main() {
 
 	// Register handlers for filters.
 	for _, filter := range cfg.Filters {
-		handler, err := newFilterHandler(filter, &rh)
+		handler, err := newFilterHandler(&cfg, filter, &rh)
 		if err != nil {
 			logrus.Errorf("Error while creating filter: %v", err)
 		}

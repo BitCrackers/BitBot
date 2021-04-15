@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/sirupsen/logrus"
 )
 
 // TODO: Reduce the complexity of this function (i.e. split it up).
@@ -126,6 +127,4 @@ func aumLog(s *discordgo.Session, m *discordgo.MessageCreate) {
 		logrus.Errorf("Error trying to send embed %v", err)
 		return
 	}
-
-	return
 }
