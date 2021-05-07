@@ -55,7 +55,7 @@ func (ch *CommandHandler) handleMute(s *discordgo.Session, i *discordgo.Interact
 		}
 	}
 
-	if permissions&discordgo.PermissionKickMembers <= 0 {
+	if permissions&discordgo.PermissionKickMembers <= 0 || !ch.userIsModerator(i.Member.User.ID) {
 		return
 	}
 

@@ -39,7 +39,7 @@ func (ch *CommandHandler) handleKick(s *discordgo.Session, i *discordgo.Interact
 		return
 	}
 
-	if permissions&discordgo.PermissionKickMembers <= 0 {
+	if permissions&discordgo.PermissionKickMembers <= 0 || !ch.userIsModerator(i.Member.User.ID) {
 		return
 	}
 

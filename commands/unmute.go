@@ -32,7 +32,7 @@ func (ch *CommandHandler) handleUnMute(s *discordgo.Session, i *discordgo.Intera
 		return
 	}
 
-	if permissions&discordgo.PermissionKickMembers <= 0 {
+	if permissions&discordgo.PermissionKickMembers <= 0 || !ch.userIsModerator(i.Member.User.ID) {
 		return
 	}
 

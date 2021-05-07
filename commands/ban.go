@@ -44,7 +44,7 @@ func (ch *CommandHandler) handleBan(s *discordgo.Session, i *discordgo.Interacti
 		return
 	}
 
-	if permissions&discordgo.PermissionBanMembers <= 0 {
+	if permissions&discordgo.PermissionBanMembers <= 0 || !ch.userIsModerator(i.Member.User.ID) {
 		return
 	}
 

@@ -36,7 +36,7 @@ func (ch *CommandHandler) handleWarn(s *discordgo.Session, i *discordgo.Interact
 		RespondWithError(s, i, "Error fetching user permissions")
 	}
 
-	if permissions&discordgo.PermissionKickMembers <= 0 {
+	if permissions&discordgo.PermissionKickMembers <= 0 || !ch.userIsModerator(i.Member.User.ID) {
 		return
 	}
 
