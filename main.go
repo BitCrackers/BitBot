@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -68,6 +69,7 @@ func main() {
 		if err != nil {
 			logrus.Errorf("Error while creating filter: %v", err)
 		}
+		fmt.Printf("Added handler: %v.\n", handler)
 		session.AddHandler(handler)
 	}
 
