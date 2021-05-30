@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"fmt"
-	"github.com/BitCrackers/BitBot/github"
 	"github.com/bwmarrin/discordgo"
 	"github.com/sirupsen/logrus"
 )
@@ -10,54 +8,29 @@ import (
 func (ch *CommandHandler) BuildsCommand() *Command {
 	return &Command{
 		Name:        "builds",
-		Description: "Gets the latest AmongUsMenu builds",
+		Description: "Gets the latest AmongUsMenu release.",
 		Options:     []*discordgo.ApplicationCommandOption{},
 		HandlerFunc: ch.handleBuilds,
 	}
 }
 
 func (ch *CommandHandler) handleBuilds(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	artifacts, err := github.Artifacts("BitCrackers", "AmongUsMenu")
-	if err != nil {
-		logrus.Errorf("error while getting artifacts: %v", err)
-		return
-	}
-
-	run, err := github.GetLatestMasterWorkflowRun("BitCrackers", "AmongUsMenu")
-	if err != nil {
-		logrus.Errorf("error while getting workflow runs: %v", err)
-		return
-	}
-
-	if len(artifacts) < 4 {
-		logrus.Errorf("unexpected amount of artifacts: %v", len(artifacts))
-		return
-	}
-
-	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionApplicationCommandResponseData{
 			Embeds: []*discordgo.MessageEmbed{
 				{
 					Title:       "Builds",
-					Description: "You have to be logged into github to download the following artifacts",
+					Description: "Here, I fetched the latest releases for you. If you're looking for a pre-release, use the Absolute Latest link.",
 					Fields: []*discordgo.MessageEmbedField{
 						{
-							Name: "Version Proxy",
-							Value: fmt.Sprintf(
-								"[[download]](https://github.com/BitCrackers/AmongUsMenu/suites/%v/artifacts/%v)",
-								run.CheckSuiteID,
-								artifacts[0].ID,
-							),
+							Name:   "Official Latest Release",
+							Value:  "[[download]](https://github.com/BitCrackers/AmongUsMenu/releases/latest)",
 							Inline: true,
 						},
 						{
-							Name: "Injectable",
-							Value: fmt.Sprintf(
-								"[[download]](https://github.com/BitCrackers/AmongUsMenu/suites/%v/artifacts/%v)",
-								run.CheckSuiteID,
-								artifacts[1].ID,
-							),
+							Name:   "Absolute Latest Release",
+							Value:  "[[download]](https://github.com/BitCrackers/AmongUsMenu/releases)",
 							Inline: true,
 						},
 					},
