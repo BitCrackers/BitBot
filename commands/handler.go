@@ -26,6 +26,7 @@ func (ch *CommandHandler) Commands() []*Command {
 		ch.BuildsCommand(),
 		ch.MuteCommand(),
 		ch.UnmuteCommand(),
+		ch.ReactionRoleCommand(),
 	}
 	if ch.Config.Debug {
 		return append(
