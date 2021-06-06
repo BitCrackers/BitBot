@@ -73,7 +73,14 @@ func main() {
 		session.AddHandler(handler)
 	}
 
+	r := ReactionRoleHandler{
+		DB:     db,
+		Config: &cfg,
+	}
+
 	session.AddHandler(aumLog)
+	session.AddHandler(r.reactionRoleAddHandler)
+	session.AddHandler(r.reactionRoleRemoveHandler)
 
 	if err = session.Open(); err != nil {
 		logrus.Fatalf("Error while opening session: %v", err)

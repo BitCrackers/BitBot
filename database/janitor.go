@@ -25,6 +25,12 @@ func (d *Database) startJanitor() chan struct{} {
 				return
 			}
 
+			reactionroles, err := d.AllReactionRole()
+			if err != nil {
+				logrus.Errorf("janitor error while getting all reaction role entries: %v", err)
+				return
+			}
+
 			guild, err := d.session.Guild(d.config.GuildID)
 			if err != nil {
 				logrus.Errorf("janitor error while getting all guild: %v", err)
@@ -82,6 +88,18 @@ func (d *Database) startJanitor() chan struct{} {
 						logrus.Errorf("%v", err)
 					}
 				}
+			}
+
+			for _, reactionrole := range reactionroles {
+				_, err := d.session.ChannelMessage(reactionrole.Channel, reactionrole.ID)
+				if err != nil {
+					logrus.Errorf("Janitor error while getting message removing entry: %v", err)
+					err = d.RemoveRoleReaction(reactionrole.ID)
+					if err != nil {
+						logrus.Errorf("Janitor error while removing reaction role entry: %v", err)
+					}
+				}
+
 			}
 		}
 	}()
