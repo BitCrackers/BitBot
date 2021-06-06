@@ -51,13 +51,6 @@ type UserRecord struct {
 	Mute     Punishment
 }
 
-type ReactionRole struct {
-	ID string `json:"-"`
-	Emote string `json:"emote"`
-	Role string `json:"role"`
-	Channel string `json:"channel"`
-}
-
 func New(session *discordgo.Session, config *config.Config, modlog *modlog.ModLogHandler) (*Database, error) {
 	ex, err := os.Executable()
 	if err != nil {
@@ -84,16 +77,6 @@ func New(session *discordgo.Session, config *config.Config, modlog *modlog.ModLo
 	}
 
 	if sqlQuery != "" {
-		_, err = underlying.Exec(sqlQuery)
-		if err != nil {
-			return nil, err
-		}
-		sqlQuery = `
-	CREATE TABLE reactionroles (
-	id VARCHAR NOT NULL,
-	data LONGTEXT
-);
-	`
 		_, err = underlying.Exec(sqlQuery)
 		if err != nil {
 			return nil, err
@@ -420,148 +403,6 @@ func (d *Database) CreateUserRecord(id string) error {
 	}
 
 	stmt, err := tx.Prepare("INSERT INTO userinfo (id) VALUES (?)")
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	_, err = stmt.Exec(id)
-	if err != nil {
-		return err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Database) AddReactionRole(id string, reaction ReactionRole) error  {
-	tx, err := d.underlying.Begin()
-	if err != nil {
-		return err
-	}
-
-	r := sql.NullString{
-		String: "",
-		Valid:  true,
-	}
-
-	b, err := json.Marshal(reaction)
-	if err != nil {
-		return err
-	}
-	r.String = string(b)
-
-	stmt, err := tx.Prepare("INSERT INTO reactionroles (id, data) VALUES (?, ?)")
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	_, err = stmt.Exec(id, r)
-	if err != nil {
-		return err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Database) ReactionRoleExist(id string) (bool, error)  {
-	sqlStmt := `SELECT id FROM reactionroles WHERE id = ?`
-	err := d.underlying.QueryRow(sqlStmt, id).Scan(&id)
-	if err == sql.ErrNoRows {
-		return false, nil
-	} else if err != nil {
-		return false, err
-	}
-	return true, nil
-}
-
-func (d *Database) GetReaction(id string) (ReactionRole, error) {
-	e, err := d.ReactionRoleExist(id)
-	if err != nil {
-		return ReactionRole{}, err
-	}
-
-	if !e {
-		return ReactionRole{}, nil
-	}
-
-	sqlStmt := `SELECT id, data FROM reactionroles WHERE id = ?`
-	row := d.underlying.QueryRow(sqlStmt, id)
-
-	var idNString sql.NullString
-	var dataNString sql.NullString
-
-	if err = row.Scan(&idNString, &dataNString); err != nil {
-		return ReactionRole{}, err
-	}
-
-	r := ReactionRole{}
-
-	dataString := ""
-	if dataNString.Valid {
-		dataString = dataNString.String
-	}
-	if dataString != "" {
-		if err = json.Unmarshal([]byte(dataString), &r); err != nil {
-			return ReactionRole{}, err
-		}
-	}
-	r.ID = idNString.String
-
-	return r, nil
-}
-
-func (d *Database) AllReactionRole() ([]ReactionRole, error) {
-	sqlStmt := `SELECT id, data FROM reactionroles`
-	rows, err := d.underlying.Query(sqlStmt)
-	if err != nil {
-		return nil, fmt.Errorf("error while fetching user records for database: %v", err)
-	}
-
-	var records []ReactionRole
-	for rows.Next() {
-		var idNString sql.NullString
-		var dataNString sql.NullString
-
-		if err = rows.Scan(&idNString, &dataNString); err != nil {
-			return nil, err
-		}
-
-		r := ReactionRole{}
-
-		dataString := ""
-		if dataNString.Valid {
-			dataString = dataNString.String
-		}
-		if dataString != "" {
-			if err = json.Unmarshal([]byte(dataString), &r); err != nil {
-				return nil, err
-			}
-		}
-		r.ID = idNString.String
-
-		records = append(records, r)
-	}
-	return records, nil
-}
-
-func (d *Database) RemoveRoleReaction(id string) error  {
-	tx, err := d.underlying.Begin()
-	if err != nil {
-		return err
-	}
-
-	stmt, err := tx.Prepare("DELETE FROM reactionroles WHERE id = ?")
 	if err != nil {
 		return err
 	}
